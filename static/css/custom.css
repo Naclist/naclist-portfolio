@@ -2,13 +2,14 @@
 .site-header {
   position: sticky;
   top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 左右分散 */
   padding: 1rem 2rem;
-  background-color: rgba(150, 150, 150, 0.6);
+  background: rgba(150,150,150,.6);
   backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  font-family: serif;
   z-index: 1000;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
 }
 
 /* 新增容器：标题 + 导航横向排列 */
@@ -51,13 +52,12 @@
 /* ========== 导航栏样式 ========== */
 
 .site-nav-wrapper {
-  flex-grow: 1;
+  margin-left: 2rem;                     /* 撑满剩余空间 */
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  display: flex;                    /* ✅ 关键：让内部可以靠右 */
-  justify-content: flex-end;       /* ✅ 关键：靠右排列 */
+  scrollbar-width: none;       /* Firefox 隐藏滚动条 */
 }
+.site-nav-wrapper::-webkit-scrollbar { display: none; }
 
 .site-nav-wrapper::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
@@ -67,6 +67,7 @@
   display: inline-flex;
   white-space: nowrap;
   gap: 1.6rem;
+  margin-right: 0rem;
 }
 
 .site-nav-inner {
