@@ -1,4 +1,5 @@
-baseURL = "/"
+baseURL = "https://naclist.github.io/naclist-portfolio/"
+canonifyURLs = true    
 languageCode = "en-us"
 title = "Naclist"
 theme = "nacstyle"
