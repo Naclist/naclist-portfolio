@@ -8,7 +8,7 @@ theme = "nacstyle"
 
 [[menu.main]]
   name = "Home"
-  url = "https://naclist.github.io/naclist-portfolio/"
+  url = "/"
   weight = 1
 
 [[menu.main]]
