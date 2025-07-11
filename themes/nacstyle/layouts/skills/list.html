@@ -1,0 +1,17 @@
+{{ define "main" }}
+<main class="content-container">
+  <h1 class="text-3xl font-bold mb-6">{{ .Title }}</h1>
+
+  <!-- 固定 3 列网格 -->
+  <div class="skills-grid">
+    {{ range .Pages.ByWeight }}
+      <a href="{{ .RelPermalink }}" class="skill-card">
+        <div class="card-inner">
+          <h2>{{ .Title }}</h2>
+          <p>{{ .Params.summary }}</p>
+        </div>
+      </a>
+    {{ end }}
+  </div>
+</main>
+{{ end }}

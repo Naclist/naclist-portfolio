@@ -1,0 +1,19 @@
+{{ define "main" }}
+<div class="content-container">
+  <div style="display: flex; align-items: flex-start; max-width: 960px; margin: 0 auto; gap: 2rem; padding: 2rem 1rem; flex-wrap: wrap;">
+
+  <!-- 左侧头像相框 -->
+  <div style="flex-shrink: 0;">
+    <img src="{{ "images/avatar.png" | relURL }}" alt="Profile"
+         style="width: 180px; height: 180px; border-radius: 50%;
+                border: 6px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); object-fit: cover;">
+  </div>
+
+  <!-- 右侧 Markdown 内容 -->
+  <div style="flex: 1; min-width: 280px;">
+    {{ .Content }}
+  </div>
+
+</div>
+</div>
+{{ end }}

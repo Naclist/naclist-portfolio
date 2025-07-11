@@ -1,0 +1,20 @@
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="site-title">
+      <a href="/">Naclist</a>
+    </div>
+    <div class="site-nav-wrapper">
+      <div class="site-nav-inner">
+        <nav class="site-nav">
+          {{ range .Site.Menus.main }}
+          {{ $current := .URL | relURL }}
+          {{ $this := $.RelPermalink }}
+          <a href="{{ .URL }}" class="{{ if eq $current $this }}active{{ end }}">
+            {{ .Name }}
+          </a>
+          {{ end }}
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>

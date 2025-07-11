@@ -1,0 +1,94 @@
+{{ define "main" }}
+<main class="content-container">
+  <h1>{{ .Title }}</h1>
+
+  {{ if .Params.papers }}
+    {{/* 先按 year 降序排序整张 papers 列表 */}}
+    {{ $papers := sort .Params.papers "year" "desc" }}
+    {{ $prevYear := "" }}        {{/* 记录上一条论文的年份 */}}
+    {{ range $papers }}
+      {{ $thisYear := printf "%d" .year }}
+
+      {{/* 若年份改变，输出新的年份栏 */}}
+      {{ if ne $thisYear $prevYear }}
+        {{ if ne $prevYear "" }}</div>{{ end }}   {{/* 关闭上一年份块（首年无效） */}}
+        <div class="publication-block">
+          <div class="publication-year">{{ $thisYear }}</div>
+      {{ end }}
+
+      <div class="publication-entry">
+        <!-- 左栏：图片 + 浮动卡片 -->
+        <div class="publication-image-meta">
+          {{ if .image }}
+            <div class="publication-image-wrapper">
+              <a href="{{ .link }}" target="_blank">
+                <img src="/images/{{ .image }}" alt="{{ .title }}">
+              </a>
+              <div class="publication-meta-card">
+                {{ if .journal }}<div><strong><em>{{ .journal }}</em></strong></div>{{ end }}
+                {{ if .authors }}<div>{{ .authors }}</div>{{ end }}
+                {{ if .doi }}<div><a href="https://doi.org/{{ .doi }}" target="_blank">{{ .doi }}</a></div>{{ end }}
+                <div class="cite-count" data-doi="{{ .doi }}">Citations: …</div>
+              </div>
+            </div>
+          {{ end }}
+        </div>
+
+        <!-- 右栏：标题 + 摘要 -->
+        <div class="publication-text" style="{{ if not .image }}flex:1 1 100%;{{ end }}">
+          <h3><a href="{{ .link }}" target="_blank">{{ .title | markdownify }}</a></h3>
+
+          <div class="abstract">
+            <div class="abstract-short">
+              {{ .abstract | truncate 450 | markdownify }}
+              <span class="read-more-toggle">[Read more]</span>
+            </div>
+            <div class="abstract-full hidden">
+              {{ .abstract | markdownify }}
+              <span class="read-more-toggle">[Read less]</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{ $prevYear = $thisYear }}  {{/* 更新游标 */}}
+    {{ end }}
+  {{ end }}
+  </div>                       {{/* 关闭最后一个 publication-block */}}
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const spans = [...document.querySelectorAll('.cite-count')];
+
+  // 简单防重复：用 Map 缓存
+  const cache = new Map();
+
+  spans.forEach(span => {
+    const doi = span.dataset.doi;
+    if (!doi) return;
+
+    // 若缓存已有则直接写入
+    if (cache.has(doi)) {
+      span.textContent = `Citations: ${cache.get(doi)}`;
+      return;
+    }
+
+    // OpenAlex 需要把 DOI 变成 URL-safe
+    const url = `https://api.openalex.org/works/doi:${encodeURIComponent(doi.toLowerCase())}`;
+
+    fetch(url)
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(data => {
+        const count = data.cited_by_count ?? 0;
+        cache.set(doi, count);
+        span.textContent = `Citations: ${count}`;
+      })
+      .catch(() => {
+        span.textContent = 'Citations: n/a';
+      });
+  });
+});
+</script>
+
+{{ end }}

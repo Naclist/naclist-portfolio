@@ -1,0 +1,47 @@
+baseURL = "/"
+languageCode = "en-us"
+title = "Naclist"
+theme = "nacstyle"
+
+[menu]
+
+[[menu.main]]
+  name = "Home"
+  url = "/"
+  weight = 1
+
+[[menu.main]]
+  name = "Publications"
+  url = "/publications/"
+  weight = 2
+
+[[menu.main]]
+  name = "Skills"
+  url = "/skills/"
+  weight = 3
+
+[[menu.main]]
+  name = "Ambitions"
+  url = "/ambitions/"
+  weight = 4
+
+[[menu.main]]
+  name = "Blogs"
+  url = "/blogs/"
+  weight = 5
+
+[[menu.main]]
+  name = "Arts"
+  url = "/arts/"
+  weight = 6
+
+[[menu.main]]
+  name = "Kindred Spirits"
+  url = "/friends/"
+  weight = 7
+
+[[menu.main]]
+  name = "About"
+  url = "/about/"
+  weight = 8
+

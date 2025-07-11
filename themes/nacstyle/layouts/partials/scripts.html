@@ -1,0 +1,10 @@
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("click", e => {
+    if (!e.target.classList.contains("read-more-toggle")) return;
+    const box = e.target.closest(".abstract");
+    box.querySelector(".abstract-short").classList.toggle("hidden");
+    box.querySelector(".abstract-full").classList.toggle("hidden");
+  });
+});
+</script>
