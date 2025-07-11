@@ -3,6 +3,7 @@ baseURL = "./"
 languageCode = "en-us"
 title = "Naclist"
 theme = "nacstyle"
+canonifyURLs = true
 
 [menu]
 
