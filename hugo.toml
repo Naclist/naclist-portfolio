@@ -13,36 +13,36 @@ theme = "nacstyle"
 
 [[menu.main]]
   name = "Publications"
-  url = "naclist-portfolio/publications/"
+  url = "/publications/"
   weight = 2
 
 [[menu.main]]
   name = "Skills"
-  url = "naclist-portfolio/skills/"
+  url = "/skills/"
   weight = 3
 
 [[menu.main]]
   name = "Ambitions"
-  url = "naclist-portfolio/ambitions/"
+  url = "/ambitions/"
   weight = 4
 
 [[menu.main]]
   name = "Blogs"
-  url = "naclist-portfolio/blogs/"
+  url = "/blogs/"
   weight = 5
 
 [[menu.main]]
   name = "Arts"
-  url = "naclist-portfolio/arts/"
+  url = "/arts/"
   weight = 6
 
 [[menu.main]]
   name = "Kindred Spirits"
-  url = "naclist-portfolio/friends/"
+  url = "/friends/"
   weight = 7
 
 [[menu.main]]
   name = "About"
-  url = "naclist-portfolio/about/"
+  url = "/about/"
   weight = 8
 
