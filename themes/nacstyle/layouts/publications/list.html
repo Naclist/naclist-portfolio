@@ -1,0 +1,8 @@
+{{ define "main" }}
+{{ .Title }}
+{{ range .Pages.ByWeight }}
+{{ .Title }}
+{{ .Params.summary }}
+
+{{ end }}
+{{ end }}
