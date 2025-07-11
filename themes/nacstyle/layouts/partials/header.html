@@ -8,7 +8,7 @@
         <nav class="site-nav">
           {{ range .Site.Menus.main }}
           {{ $current := .URL | relURL }}
-          {{ $this := $.RelPermalink }}
+          {{ $this := $.RelPermalink | relURL}}
           <a href="{{ .URL }}" class="{{ if eq $current $this }}active{{ end }}">
             {{ .Name }}
           </a>
