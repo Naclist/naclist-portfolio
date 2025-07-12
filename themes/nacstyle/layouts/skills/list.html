@@ -2,8 +2,8 @@
 <main class="content-container">
   <h1 class="text-3xl font-bold mb-6">{{ .Title }}</h1>
 
-  <!-- 固定 3 列网格 -->
-  <div class="skills-grid">
+  <!--★ 网格区：固定 3 列（桌⾯端），已加 .skills-grid 供响应式 CSS 针对 -->
+  <div class="skills-grid grid grid-cols-3 gap-6 mb-12">
     {{ range .Pages.ByWeight }}
       <a href="{{ .RelPermalink }}" class="skill-card">
         <div class="card-inner">
@@ -12,6 +12,11 @@
         </div>
       </a>
     {{ end }}
+  </div>
+
+  <!--★ 介绍 + 脚注正文 -->
+  <div class="prose">
+    {{ .Content }}
   </div>
 </main>
 {{ end }}

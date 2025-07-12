@@ -1,20 +1,18 @@
 <header class="site-header">
-  <div class="site-header-inner">
-    <div class="site-title">
-      <a href="https://naclist.github.io/naclist-portfolio/">Naclist</a>
-    </div>
-    <div class="site-nav-wrapper">
-      <div class="site-nav-inner">
-        <nav class="site-nav">
-          {{ range .Site.Menus.main }}
-          {{ $current := .URL | relURL }}
-          {{ $this := $.RelPermalink | relURL}}
-          <a href="{{ .URL }}" class="{{ if eq $current $this }}active{{ end }}">
-            {{ .Name }}
-          </a>
-          {{ end }}
-        </nav>
-      </div>
-    </div>
+  <div class="site-title">
+    <a href="{{ "https://naclist.github.io/naclist-portfolio/" | relURL }}">Naclist</a>
+  </div>
+
+  <!-- 外层包裹，负责滚动 -->
+  <div class="site-nav-wrapper">
+    <nav class="site-nav">
+      {{ range .Site.Menus.main }}
+        <a href="{{ .URL | relURL }}"
+           class="{{ if eq (.URL | relURL) ($.RelPermalink | relURL) }}active{{ end }}">
+          {{ .Name }}
+        </a>
+      {{ end }}
+    </nav>
   </div>
 </header>
+

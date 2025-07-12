@@ -5,6 +5,14 @@ title = "Naclist"
 theme = "nacstyle"
 canonifyURLs = true
 
+[markup.goldmark.renderer]
+unsafe = true
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.extensions]
+      footnote = true
+
 [menu]
 
 [[menu.main]]

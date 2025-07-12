@@ -1,6 +1,6 @@
 ---
 title: "Publications"
-
+url:   "/publications/"
 papers:
   - title: "Emergence and global spread of a dominant multidrug-resistant clade within *Acinetobacter baumannii*"
     abstract: >
@@ -18,7 +18,7 @@ papers:
     year: 2025
     image: "2025_cb_ap.png"
     journal: "Communications Biology"
-    authors: "Zhu, S., Li, S., Wu, B. et al."
+    authors: "Wang, S., Zhou, Y., Wang, Y. et al."
     doi: "10.1038/s42003-025-08156-y"
     link: "https://www.nature.com/articles/s42003-025-08156-y"
 
@@ -28,7 +28,7 @@ papers:
     year: 2025
     image: "2025_stoten_ss.png"
     journal: "Science of The Total Environment"
-    authors: "Wang, S., Zhou, Y., Wang, Y. et al."
+    authors: "Zhu, S., Li, S., Wu, B. et al."
     doi: "10.1016/j.scitotenv.2024.178307"
     link: "https://www.sciencedirect.com/science/article/abs/pii/S0048969724084651"
 
