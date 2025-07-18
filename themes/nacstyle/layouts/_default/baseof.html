@@ -12,7 +12,7 @@
 
     <!-- ✅ 引入自定义样式 -->
     {{ $css := resources.Get "css/custom.css" | resources.Minify | resources.Fingerprint }}
-    <link rel="stylesheet" href="{{ $css.RelPermalink }}">    
+    <link rel="stylesheet" href="{{ $css.RelPermalink | relURL  }}">    
   </head>
   <body>
     {{ partial "header.html" . }}
