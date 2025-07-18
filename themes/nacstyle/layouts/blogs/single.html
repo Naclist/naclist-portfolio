@@ -1,0 +1,159 @@
+{{ define "main" }}
+<main class="content-container">
+  <article class="prose max-w-none mb-8">
+    <h1 class="text-3xl font-bold mb-4">{{ .Title }}</h1>
+    <p class="text-gray-500 mb-4">{{ .Date.Format "2006-01-02" }}</p>
+    {{ .Content }}
+  </article>
+
+{{ with .Params.featured_img }}
+  <figure class="blog-frame">
+    <img src="{{ printf "/images/blogs/%s" . }}" alt="{{ $.Params.img_caption }}">
+    {{ with $.Params.img_caption }}
+      <figcaption class="caption">{{ . }}</figcaption>
+    {{ end }}
+  </figure>
+{{ end }}
+
+  <!-- Comment Section -->
+  <section id="comments-section" class="bg-white shadow-lg rounded-lg p-6">
+    <h3 class="text-2xl font-semibold mb-4">Message Board</h3>
+
+    <!-- Main Comment Form -->
+    <div class="mb-6">
+      <div class="flex gap-2 mb-2">
+        <input id="username" placeholder="Nickname" class="border rounded p-2 flex-1" />
+        <button onclick="submitComment()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Submit</button>
+      </div>
+      <textarea id="comment-content" placeholder="Write your comment..."
+        class="border rounded p-2 w-full" style="resize:none;width:100%;height:96px;"></textarea>
+    </div>
+
+    <ul id="comments-list" class="space-y-4 comment-thread"></ul>
+  </section>
+</main>
+
+<style>
+.comment-thread {
+  list-style: none;
+  padding: 0;
+}
+.comment-item {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  position: relative;
+}
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.comment-header .username {
+  font-weight: bold;
+}
+.comment-header .timestamp {
+  color: #9ca3af;
+  font-size: 12px; /* 小一号 */
+}
+.comment-content {
+  margin-bottom: 8px;
+}
+.reply-button {
+  font-size: 14px;
+  color: #2563eb;
+  cursor: pointer;
+}
+.reply-box {
+  margin-top: 8px;
+}
+.reply-thread {
+  margin-left: 20px;
+  border-left: 2px solid #d1d5db;
+  padding-left: 12px;
+}
+textarea {
+  resize: none !important; /* 强制锁定 */
+}
+</style>
+
+<script>
+const apiBase = "http://124.223.76.94:5003/api/comments";
+const postId = "{{ .File.BaseFileName }}";
+
+async function loadComments() {
+    const res = await fetch(`${apiBase}?post_id=${postId}`);
+    const comments = await res.json();
+    document.getElementById("comments-list").innerHTML = renderComments(comments);
+}
+
+function renderComments(comments, level = 0) {
+    return comments.map(c => `
+        <li class="comment-item">
+            <div class="comment-header">
+                <span class="username">${c.username}</span>
+                <span class="timestamp">${formatTimestamp(c.created_at)}</span>
+            </div>
+            <div class="comment-content">${c.content}</div>
+            <button onclick="showReplyBox(${c.id})" class="reply-button">Reply</button>
+            <div id="reply-box-${c.id}" class="reply-box"></div>
+            ${c.replies && c.replies.length ? `<ul class="reply-thread">${renderComments(c.replies, level + 1)}</ul>` : ""}
+        </li>
+    `).join("");
+}
+
+function showReplyBox(commentId) {
+    const box = document.getElementById(`reply-box-${commentId}`);
+    box.innerHTML = `
+        <div class="border rounded-lg p-3 bg-white shadow-sm">
+          <div class="flex gap-2 mb-2">
+            <input id="reply-username-${commentId}" placeholder="Nickname" class="border rounded p-2 flex-1" />
+            <button onclick="submitReply(${commentId})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded">Submit</button>
+          </div>
+          <textarea id="reply-content-${commentId}" placeholder="Write your reply..."
+            class="border rounded p-2 w-full" style="resize:none;width:100%;height:80px;"></textarea>
+        </div>
+    `;
+}
+
+async function submitComment() {
+    const username = document.getElementById("username").value || "Anonymous";
+    const content = document.getElementById("comment-content").value;
+    if (!content.trim()) return alert("Comment cannot be empty!");
+    await fetch(apiBase, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({post_id: postId, username, content})
+    });
+    document.getElementById("comment-content").value = "";
+    loadComments();
+}
+
+async function submitReply(parentId) {
+    const username = document.getElementById(`reply-username-${parentId}`).value || "Anonymous";
+    const content = document.getElementById(`reply-content-${parentId}`).value;
+    if (!content.trim()) return alert("Reply cannot be empty!");
+    await fetch(apiBase, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({post_id: postId, username, content, parent_id: parentId})
+    });
+    loadComments();
+}
+
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp * 1000);
+    const dateStr = date.toLocaleString();
+    const diff = Math.floor(Date.now() / 1000) - timestamp;
+    let relative = diff < 60 ? `${diff}s ago` :
+                   diff < 3600 ? `${Math.floor(diff / 60)}m ago` :
+                   diff < 86400 ? `${Math.floor(diff / 3600)}h ago` :
+                   `${Math.floor(diff / 86400)}d ago`;
+    return `${dateStr} (${relative})`;
+}
+
+loadComments();
+</script>
+{{ end }}

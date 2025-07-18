@@ -1,0 +1,116 @@
+{{ define "main" }}
+<!-- 整个博客页外层 -->
+<div class="content-container">
+    <div class="blog-wrapper">
+
+    <!-- 主内容：文章列表 -->
+    <main class="blog-main">
+        <h1 class="blog-title">{{ .Title }}</h1>
+
+        <ul class="blog-list">
+            {{ range .Pages.ByDate.Reverse }}
+                <li class="blog-row">
+                <div class="row-left">
+                    <a href="{{ .RelPermalink }}" class="post-title">{{ .Title }}</a>
+                    <span class="post-summary">{{ with .Params.summary }}{{ . }}{{ else }}{{ .Summary }}{{ end }}</span>
+                    <span id="count-{{ .File.BaseFileName }}" class="count-badge">💬0</span>
+                </div>
+                <time class="post-date">{{ .Date.Format "2006-01-02" }}</time>
+                </li>
+            {{ end }}
+        </ul>
+    </main>
+
+    <!-- Sidebar：全站留言 -->
+    <aside class="blog-sidebar">
+        <h2 class="sb-heading">Latest Comments</h2>
+
+        <div class="sb-form">
+        <input id="sb-name"  class="sb-input" placeholder="Nickname">
+        <textarea id="sb-text" class="sb-text"  placeholder="Say something…"></textarea>
+        <button  class="sb-btn"   onclick="sbSubmit()">Submit</button>
+        </div>
+
+        <ul id="sb-list" class="sb-list"></ul>
+        <button id="sb-more" class="sb-more" onclick="sbLoad(true)">Load more…</button>
+    </aside>
+
+    </div>
+</div>
+<!-- ============ 纯 CSS ============ -->
+<style>
+/* --- 版心 & 两栏 --- */
+.blog-wrapper      { max-width:1100px;margin:0 auto;display:flex;gap:40px;flex-wrap:wrap; }
+.blog-main         { flex:1 1 0;min-width:300px; }
+.blog-sidebar      { flex:0 0 320px;background:#f8f9fa;padding:20px;border-radius:8px;box-shadow:0 2px 6px #0001; }
+
+/* --- 文章列表 --- */
+.blog-title        { font-size:1.8rem;font-weight:700;margin-bottom:24px; }
+.post-list         { padding-left:20px; }
+.post-list li      { margin:12px 0; }
+.count-badge       { color:#888;font-size:0.85rem;margin-left:6px; }
+
+/* --- Sidebar 文字 & 表单 --- */
+.sb-heading        { font-size:1.1rem;font-weight:600;margin-bottom:14px; }
+.sb-input          { width:100%;padding:6px 8px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;font-size:0.9rem; }
+.sb-text           { width:100%;height:70px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:0.9rem;resize:none; }
+.sb-btn            { display:block;width:100%;background:#2563eb;color:#fff;border:0;border-radius:4px;padding:6px 0;font-size:0.9rem;margin-top:6px;cursor:pointer; }
+.sb-btn:hover      { background:#1d4ed8; }
+
+.sb-list           { max-height:200px;overflow:auto;margin:14px 0 6px;padding-right:4px;list-style:none;font-size:0.85rem; }
+.sb-item           { border-bottom:1px solid #e5e7eb;padding-bottom:6px;margin-bottom:6px; }
+.sb-reply          { margin-left:16px;border-left:2px solid #d1d5db;padding-left:8px; }
+.sb-more           { background:none;border:0;color:#2563eb;cursor:pointer;font-size:0.85rem;padding:0; }
+.sb-more:hover     { text-decoration:underline; }
+.sb-time           { color:#999;font-size:0.75rem;margin-left:4px; }
+
+textarea{resize:none!important;}
+</style>
+
+<!-- ============ JS ============ -->
+<script>
+const API      = "http://124.223.76.94:5003/api/comments";
+const API_CNT  = "http://124.223.76.94:5003/api/comments/count";
+
+/* -------- ① 文章标题后评论数 -------- */
+document.querySelectorAll('[id^="count-"]').forEach(async s=>{
+  const pid=s.id.replace('count-','');
+  const n  = await fetch(`${API_CNT}?post_id=${pid}`).then(r=>r.json()).then(d=>d.count);
+  s.textContent=`💬${n}`;
+});
+
+/* -------- ② Sidebar 最新留言 -------- */
+let offset=0, page=5;
+async function sbLoad(append=false){
+  const data = await fetch(`${API}?post_id=global&offset=${offset}&limit=${page}`)
+                      .then(r=>r.json());
+  if(!append){ document.getElementById('sb-list').innerHTML=''; offset=0; }
+  document.getElementById('sb-list').insertAdjacentHTML('beforeend', render(data));
+  offset += data.length;
+  document.getElementById('sb-more').style.display = data.length < page ? 'none':'block';
+}
+function render(arr){
+  return arr.map(c=>`
+    <li class="sb-item">
+      <b>${c.username}</b><span class="sb-time">${ts(c.created_at)}</span>
+      <div class="sb-content" onclick="location='/blogs/${c.post_id}/#comment-${c.id}'">${c.content}</div>
+      ${c.replies?.length?c.replies.map(r=>`
+        <div class="sb-reply">
+          <b>${r.username}</b><span class="sb-time">${ts(r.created_at)}</span>
+          <div class="sb-content" onclick="location='/blogs/${r.post_id}/#comment-${r.id}'">${r.content}</div>
+        </div>`).join(''):''}
+    </li>`).join('');
+}
+async function sbSubmit(){
+  const name=document.getElementById('sb-name').value||'Anonymous';
+  const text=document.getElementById('sb-text').value.trim();
+  if(!text){alert('Empty!');return;}
+  await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({post_id:'global',username:name,content:text})});
+  document.getElementById('sb-text').value='';
+  sbLoad(false);
+}
+function ts(s){return new Date(s*1000).toLocaleString();}
+sbLoad(false);
+</script>
+{{ end }}

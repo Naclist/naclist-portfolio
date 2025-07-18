@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blogs</title>
+
+    
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@400;700&display=swap" rel="stylesheet">
+
+    
+    
+    <link rel="stylesheet" href="//localhost:1313/css/custom.min.30ac84c95f64d19d3a3c0e2feae386a1f32a94939de702d0be96bb3bf1e7e352.css">    
+  </head>
+  <body>
+    <header class="site-header">
+  <div class="site-title">
+    <a href="https://naclist.github.io/naclist-portfolio/">Naclist</a>
+  </div>
+
+  
+  <div class="site-nav-wrapper">
+    <nav class="site-nav">
+      
+        <a href="//localhost:1313/"
+           class="">
+          Home
+        </a>
+      
+        <a href="//localhost:1313/publications/"
+           class="">
+          Publications
+        </a>
+      
+        <a href="//localhost:1313/skills/"
+           class="">
+          Skills
+        </a>
+      
+        <a href="//localhost:1313/ambitions/"
+           class="">
+          Ambitions
+        </a>
+      
+        <a href="//localhost:1313/blogs/"
+           class="active">
+          Blogs
+        </a>
+      
+        <a href="//localhost:1313/arts/"
+           class="">
+          Arts
+        </a>
+      
+        <a href="//localhost:1313/friends/"
+           class="">
+          Kindred Spirits
+        </a>
+      
+        <a href="//localhost:1313/about/"
+           class="">
+          About
+        </a>
+      
+    </nav>
+  </div>
+</header>
+
+
+    
+
+<div class="content-container">
+    <div class="blog-wrapper">
+
+    
+    <main class="blog-main">
+        <h1 class="blog-title">Blogs</h1>
+
+        <ul class="blog-list">
+            
+                <li class="blog-row">
+                <div class="row-left">
+                    <a href="//localhost:1313/blogs/blog1/" class="post-title">From Uncertainty to Determination?</a>
+                    <span class="post-summary">Reaching Out for a PhD Opportunity</span>
+                    <span id="count-Blog1" class="count-badge">💬0</span>
+                </div>
+                <time class="post-date">2025-07-14</time>
+                </li>
+            
+        </ul>
+    </main>
+
+    
+    <aside class="blog-sidebar">
+        <h2 class="sb-heading">Latest Comments</h2>
+
+        <div class="sb-form">
+        <input id="sb-name"  class="sb-input" placeholder="Nickname">
+        <textarea id="sb-text" class="sb-text"  placeholder="Say something…"></textarea>
+        <button  class="sb-btn"   onclick="sbSubmit()">Submit</button>
+        </div>
+
+        <ul id="sb-list" class="sb-list"></ul>
+        <button id="sb-more" class="sb-more" onclick="sbLoad(true)">Load more…</button>
+    </aside>
+
+    </div>
+</div>
+
+<style>
+ 
+.blog-wrapper      { max-width:1100px;margin:0 auto;display:flex;gap:40px;flex-wrap:wrap; }
+.blog-main         { flex:1 1 0;min-width:300px; }
+.blog-sidebar      { flex:0 0 320px;background:#f8f9fa;padding:20px;border-radius:8px;box-shadow:0 2px 6px #0001; }
+
+ 
+.blog-title        { font-size:1.8rem;font-weight:700;margin-bottom:24px; }
+.post-list         { padding-left:20px; }
+.post-list li      { margin:12px 0; }
+.count-badge       { color:#888;font-size:0.85rem;margin-left:6px; }
+
+ 
+.sb-heading        { font-size:1.1rem;font-weight:600;margin-bottom:14px; }
+.sb-input          { width:100%;padding:6px 8px;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;font-size:0.9rem; }
+.sb-text           { width:100%;height:70px;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:0.9rem;resize:none; }
+.sb-btn            { display:block;width:100%;background:#2563eb;color:#fff;border:0;border-radius:4px;padding:6px 0;font-size:0.9rem;margin-top:6px;cursor:pointer; }
+.sb-btn:hover      { background:#1d4ed8; }
+
+.sb-list           { max-height:200px;overflow:auto;margin:14px 0 6px;padding-right:4px;list-style:none;font-size:0.85rem; }
+.sb-item           { border-bottom:1px solid #e5e7eb;padding-bottom:6px;margin-bottom:6px; }
+.sb-reply          { margin-left:16px;border-left:2px solid #d1d5db;padding-left:8px; }
+.sb-more           { background:none;border:0;color:#2563eb;cursor:pointer;font-size:0.85rem;padding:0; }
+.sb-more:hover     { text-decoration:underline; }
+.sb-time           { color:#999;font-size:0.75rem;margin-left:4px; }
+
+textarea{resize:none!important;}
+</style>
+
+
+<script>
+const API      = "http://124.223.76.94:5003/api/comments";
+const API_CNT  = "http://124.223.76.94:5003/api/comments/count";
+
+ 
+document.querySelectorAll('[id^="count-"]').forEach(async s=>{
+  const pid=s.id.replace('count-','');
+  const n  = await fetch(`${API_CNT}?post_id=${pid}`).then(r=>r.json()).then(d=>d.count);
+  s.textContent=`💬${n}`;
+});
+
+ 
+let offset=0, page=5;
+async function sbLoad(append=false){
+  const data = await fetch(`${API}?post_id=global&offset=${offset}&limit=${page}`)
+                      .then(r=>r.json());
+  if(!append){ document.getElementById('sb-list').innerHTML=''; offset=0; }
+  document.getElementById('sb-list').insertAdjacentHTML('beforeend', render(data));
+  offset += data.length;
+  document.getElementById('sb-more').style.display = data.length < page ? 'none':'block';
+}
+function render(arr){
+  return arr.map(c=>`
+    <li class="sb-item">
+      <b>${c.username}</b><span class="sb-time">${ts(c.created_at)}</span>
+      <div class="sb-content" onclick="location='/blogs/${c.post_id}/#comment-${c.id}'">${c.content}</div>
+      ${c.replies?.length?c.replies.map(r=>`
+        <div class="sb-reply">
+          <b>${r.username}</b><span class="sb-time">${ts(r.created_at)}</span>
+          <div class="sb-content" onclick="location='/blogs/${r.post_id}/#comment-${r.id}'">${r.content}</div>
+        </div>`).join(''):''}
+    </li>`).join('');
+}
+async function sbSubmit(){
+  const name=document.getElementById('sb-name').value||'Anonymous';
+  const text=document.getElementById('sb-text').value.trim();
+  if(!text){alert('Empty!');return;}
+  await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({post_id:'global',username:name,content:text})});
+  document.getElementById('sb-text').value='';
+  sbLoad(false);
+}
+function ts(s){return new Date(s*1000).toLocaleString();}
+sbLoad(false);
+</script>
+
+    <footer class="site-footer" style="text-align: center; padding: 2rem 0;">
+  <div class="social-icons">
+    <a href="https://github.com/naclist" target="_blank">
+      <img class="social-icon" src="//localhost:1313/images/github-color.svg" alt="GitHub">
+    </a>
+    <a href="https://scholar.google.com/citations?user=jjvdIuYAAAAJ" target="_blank">
+      <img class="social-icon" src="//localhost:1313/images/scholar-color.svg" alt="Google Scholar">
+    </a>
+    <a href="mailto:Zxzzzhu@gmail.com">
+      <img class="social-icon" src="//localhost:1313/images/email-color.svg" alt="Email">
+    </a>
+  </div>
+  <p>© 2025 Naclist. All rights reserved.</p>
+</footer>
+
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("click", e => {
+    if (!e.target.classList.contains("read-more-toggle")) return;
+    const box = e.target.closest(".abstract");
+    box.querySelector(".abstract-short").classList.toggle("hidden");
+    box.querySelector(".abstract-full").classList.toggle("hidden");
+  });
+});
+</script>
+  </body>
+</html>

@@ -399,3 +399,34 @@ a.footnote-backref {           /* 两种写法兼容旧版 */
     font-size: 0.7rem;
   }
 }
+
+
+.blog-list       { list-style:none;padding:0;margin:0; }
+.blog-row        { display:flex;justify-content:space-between;align-items:flex-start;
+                   padding:10px 0;border-bottom:1px solid #ececec; }
+.row-left        { max-width:78%;line-height:1.5; }
+.post-title      { font-weight:600;margin-right:6px; }
+.post-summary    { color:#666;font-size:0.9rem;margin-left:4px; }
+.count-badge     { color:#888;font-size:0.85rem;margin-left:6px; }
+.post-date       { flex:0 0 auto;color:#999;font-size:0.85rem;white-space:nowrap; }
+
+
+.blog-frame{
+  max-width:100%;     /* 跟随正文 */
+  border:8px solid #e5e7eb;
+  padding:5px;
+  background:#fff;
+  margin:28px 0;
+  box-sizing:border-box;
+}
+.blog-frame img{
+  width:100%;
+  height:auto;
+  display:block;
+}
+.blog-frame .caption{
+  font-size:0.9rem;
+  color:#555;
+  text-align:right;
+  margin-top:6px;
+}

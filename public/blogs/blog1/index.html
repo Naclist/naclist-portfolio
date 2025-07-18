@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>From Uncertainty to Determination?</title>
+
+    
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@400;700&display=swap" rel="stylesheet">
+
+    
+    
+    <link rel="stylesheet" href="//localhost:1313/css/custom.min.30ac84c95f64d19d3a3c0e2feae386a1f32a94939de702d0be96bb3bf1e7e352.css">    
+  </head>
+  <body>
+    <header class="site-header">
+  <div class="site-title">
+    <a href="https://naclist.github.io/naclist-portfolio/">Naclist</a>
+  </div>
+
+  
+  <div class="site-nav-wrapper">
+    <nav class="site-nav">
+      
+        <a href="//localhost:1313/"
+           class="">
+          Home
+        </a>
+      
+        <a href="//localhost:1313/publications/"
+           class="">
+          Publications
+        </a>
+      
+        <a href="//localhost:1313/skills/"
+           class="">
+          Skills
+        </a>
+      
+        <a href="//localhost:1313/ambitions/"
+           class="">
+          Ambitions
+        </a>
+      
+        <a href="//localhost:1313/blogs/"
+           class="">
+          Blogs
+        </a>
+      
+        <a href="//localhost:1313/arts/"
+           class="">
+          Arts
+        </a>
+      
+        <a href="//localhost:1313/friends/"
+           class="">
+          Kindred Spirits
+        </a>
+      
+        <a href="//localhost:1313/about/"
+           class="">
+          About
+        </a>
+      
+    </nav>
+  </div>
+</header>
+
+
+    
+<main class="content-container">
+  <article class="prose max-w-none mb-8">
+    <h1 class="text-3xl font-bold mb-4">From Uncertainty to Determination?</h1>
+    <p class="text-gray-500 mb-4">2025-07-14</p>
+    <p>These days, I’ve been doing something that feels both exciting and exhausting—trying to get into a PhD program in Europe. Honestly, when I first started, I had no idea how complicated this would be. I thought, just send some emails and wait for replies, right? Well… no.</p>
+<p>I wrote to a bunch of professors whose work I really admire. Some never replied, some said funding is tight. Every email felt like throwing a bottle into the ocean. And every time I saw “no funding available,” I had that sinking feeling. For a while, I wondered if I should just give up. Since my GPA and school suck soooo bad, a lot of people online kept saying I can hardly get a PhD position.</p>
+<p>But I realized I can’t. I really want this. Not just a title, but the chance to work on bacteria, to understand how they adapt and spread, and evolution thereafter. So, I told myself: If it’s hard, then work harder. <strong>This might be the bravest and most proactive moment of my entire life</strong>.</p>
+<p>Now, besides drafting research ideas and proposals, I’m also fighting another battle—English. I’ve been learning IELTS stuff again. Sometimes it’s fun, sometimes it’s just painful.</p>
+<p>I don’t know how long this will take, or how many more emails I’ll send. But I know one thing: I’m not stopping.</p>
+
+  </article>
+
+
+  <figure class="blog-frame">
+    <img src="//localhost:1313/images/blogs/blog1kitty.jpg" alt="Hammered by fate">
+    
+      <figcaption class="caption">Hammered by fate</figcaption>
+    
+  </figure>
+
+
+  
+  <section id="comments-section" class="bg-white shadow-lg rounded-lg p-6">
+    <h3 class="text-2xl font-semibold mb-4">Message Board</h3>
+
+    
+    <div class="mb-6">
+      <div class="flex gap-2 mb-2">
+        <input id="username" placeholder="Nickname" class="border rounded p-2 flex-1" />
+        <button onclick="submitComment()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Submit</button>
+      </div>
+      <textarea id="comment-content" placeholder="Write your comment..."
+        class="border rounded p-2 w-full" style="resize:none;width:100%;height:96px;"></textarea>
+    </div>
+
+    <ul id="comments-list" class="space-y-4 comment-thread"></ul>
+  </section>
+</main>
+
+<style>
+.comment-thread {
+  list-style: none;
+  padding: 0;
+}
+.comment-item {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  position: relative;
+}
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.comment-header .username {
+  font-weight: bold;
+}
+.comment-header .timestamp {
+  color: #9ca3af;
+  font-size: 12px;  
+}
+.comment-content {
+  margin-bottom: 8px;
+}
+.reply-button {
+  font-size: 14px;
+  color: #2563eb;
+  cursor: pointer;
+}
+.reply-box {
+  margin-top: 8px;
+}
+.reply-thread {
+  margin-left: 20px;
+  border-left: 2px solid #d1d5db;
+  padding-left: 12px;
+}
+textarea {
+  resize: none !important;  
+}
+</style>
+
+<script>
+const apiBase = "http://124.223.76.94:5003/api/comments";
+const postId = "Blog1";
+
+async function loadComments() {
+    const res = await fetch(`${apiBase}?post_id=${postId}`);
+    const comments = await res.json();
+    document.getElementById("comments-list").innerHTML = renderComments(comments);
+}
+
+function renderComments(comments, level = 0) {
+    return comments.map(c => `
+        <li class="comment-item">
+            <div class="comment-header">
+                <span class="username">${c.username}</span>
+                <span class="timestamp">${formatTimestamp(c.created_at)}</span>
+            </div>
+            <div class="comment-content">${c.content}</div>
+            <button onclick="showReplyBox(${c.id})" class="reply-button">Reply</button>
+            <div id="reply-box-${c.id}" class="reply-box"></div>
+            ${c.replies && c.replies.length ? `<ul class="reply-thread">${renderComments(c.replies, level + 1)}</ul>` : ""}
+        </li>
+    `).join("");
+}
+
+function showReplyBox(commentId) {
+    const box = document.getElementById(`reply-box-${commentId}`);
+    box.innerHTML = `
+        <div class="border rounded-lg p-3 bg-white shadow-sm">
+          <div class="flex gap-2 mb-2">
+            <input id="reply-username-${commentId}" placeholder="Nickname" class="border rounded p-2 flex-1" />
+            <button onclick="submitReply(${commentId})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded">Submit</button>
+          </div>
+          <textarea id="reply-content-${commentId}" placeholder="Write your reply..."
+            class="border rounded p-2 w-full" style="resize:none;width:100%;height:80px;"></textarea>
+        </div>
+    `;
+}
+
+async function submitComment() {
+    const username = document.getElementById("username").value || "Anonymous";
+    const content = document.getElementById("comment-content").value;
+    if (!content.trim()) return alert("Comment cannot be empty!");
+    await fetch(apiBase, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({post_id: postId, username, content})
+    });
+    document.getElementById("comment-content").value = "";
+    loadComments();
+}
+
+async function submitReply(parentId) {
+    const username = document.getElementById(`reply-username-${parentId}`).value || "Anonymous";
+    const content = document.getElementById(`reply-content-${parentId}`).value;
+    if (!content.trim()) return alert("Reply cannot be empty!");
+    await fetch(apiBase, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({post_id: postId, username, content, parent_id: parentId})
+    });
+    loadComments();
+}
+
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp * 1000);
+    const dateStr = date.toLocaleString();
+    const diff = Math.floor(Date.now() / 1000) - timestamp;
+    let relative = diff < 60 ? `${diff}s ago` :
+                   diff < 3600 ? `${Math.floor(diff / 60)}m ago` :
+                   diff < 86400 ? `${Math.floor(diff / 3600)}h ago` :
+                   `${Math.floor(diff / 86400)}d ago`;
+    return `${dateStr} (${relative})`;
+}
+
+loadComments();
+</script>
+
+    <footer class="site-footer" style="text-align: center; padding: 2rem 0;">
+  <div class="social-icons">
+    <a href="https://github.com/naclist" target="_blank">
+      <img class="social-icon" src="//localhost:1313/images/github-color.svg" alt="GitHub">
+    </a>
+    <a href="https://scholar.google.com/citations?user=jjvdIuYAAAAJ" target="_blank">
+      <img class="social-icon" src="//localhost:1313/images/scholar-color.svg" alt="Google Scholar">
+    </a>
+    <a href="mailto:Zxzzzhu@gmail.com">
+      <img class="social-icon" src="//localhost:1313/images/email-color.svg" alt="Email">
+    </a>
+  </div>
+  <p>© 2025 Naclist. All rights reserved.</p>
+</footer>
+
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("click", e => {
+    if (!e.target.classList.contains("read-more-toggle")) return;
+    const box = e.target.closest(".abstract");
+    box.querySelector(".abstract-short").classList.toggle("hidden");
+    box.querySelector(".abstract-full").classList.toggle("hidden");
+  });
+});
+</script>
+  </body>
+</html>
