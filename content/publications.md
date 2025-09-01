@@ -101,6 +101,26 @@ papers:
     authors: "Ye, S., Wang, L., Li, S. et al."
     doi: "10.3389/fcimb.2022.1090889"
     link: "https://www.frontiersin.org/journals/cellular-and-infection-microbiology/articles/10.3389/fcimb.2022.1090889/full"
+
+  - title: "Emergence of carbapenem-resistant XDR *Salmonella enterica* in pediatric patients in South China: a genomic perspective study"
+    abstract: >
+      **Background and Aim**  Carbapenem-resistant *Salmonella enterica* (CRSE), mostly driven by plasmids, poses a growing public health threat, especially in paediatric populations. This study investigates a cluster of paediatric CRSE infections in paediatric populations, characterizes genomic features of CRSE isolates, assesses global CRSE prevalence, and explores plasmid-mediated horizontal gene transfer.  **Methods**  An epidemiological investigation of 18 paediatric CRSE cases was conducted. Genomic analysis included resistome profiling, plasmid typing, and phylogenetic clustering to assess genetic diversity. A global analysis of 530,113 *Salmonella genomes* identified carbapenemase-carrying isolates. Plasmid transfer experiments between *S. enterica* and *Escherichia coli* were performed to evaluate horizontal gene transmission.  **Results**  Respiratory co-infections (67% of cases, primarily respiratory syncytial virus and human parainfluenza viruses) were associated with severe clinical outcomes. Genomic analysis revealed multiple genetically distinct CRSE clones carrying blaNDM-5, predominantly on IncI-gamma/K1 and IncHI2A plasmids. Plasmid-mediated transfer of carbapenem resistance genes between *S. enterica* and *E. coli* was confirmed. Global surveillance identified 228 carbapenemase-positive Salmonella isolates (2000–2023) across 35 genetically diverse populations and 24 countries, demonstrating widespread dissemination.  **Conclusions**  Respiratory co-infections may exacerbate CRSE severity in children, while plasmid circulation drives carbapenem resistance transmission. The high genetic diversity and global distribution of CRSE highlight urgent needs for integrated surveillance, antimicrobial stewardship, and interventions targeting co-infections and environmental reservoirs.
+    year: 2025
+    image: "2025_ijaa_se.jpg"
+    journal: "International Journal of Antimicrobial Agents"
+    authors: "Feng, X., Li, S., Huang, D. et al."
+    doi: "10.1016/j.ijantimicag.2025.107589"
+    link: "https://www.sciencedirect.com/science/article/abs/pii/S092485792500144X"
+
+  - title: "Post-COVID-19 disruption of the respiratory microbiome modulates *Mycoplasma* pneumoniae: a multi-center retrospective investigation study"
+    abstract: >
+      Since the COVID-19 pandemic, there has been a notable resurgence of Mycoplasma pneumoniae pneumonia (MPP) in children, with a concerning rise in the severity of cases. Although changes in post-pandemic respiratory infection patterns have been documented, the reasons behind the increased severity of MPP, especially concerning shifts in the respiratory microbiota, are not well understood. This study aims to explore how pandemic-associated disruptions in respiratory microbiota contribute to MPP severity. Through analysis of multiple independent cohorts, we found that the depletion of protective respiratory microbiota exacerbates MPP severity by reducing colonization resistance again135921@pyzYAst M. pneumoniae. We identified two antagonistic microbiota modules with distinct metabolic features and community structures that regulate pathogen colonization and disease severity. Using a Susceptible-Infected-Recovered (SIR) model, we simulated M. pneumoniae infection dynamics across different microbiota states. Additionally, a machine-learning model based on eight key microbes effectively distinguished between cases and controls and predicted infection severity, offering insights into post-pandemic respiratory infections. This study underscores the essential role of the respiratory microbiota in influencing the severity of M. pneumoniae infections. Our findings offer a framework for managing respiratory infections in the post-pandemic era, highlighting the significance of understanding microbial community dynamics in determining disease outcomes. These insights could guide the development of therapeutic strategies focused on restoring or enhancing the protective microbiota, which may offer an effective strategy for the management of MPP and other respiratory infections.
+    year: 2025
+    image: "2025_emi_mp.png"
+    journal: "Emerging Microbes & Infections"
+    authors: "Huang, S., Li, S., Zhao, R. et al."
+    doi: "Accepted"
+    link: "NA"
 ---
 
 This page contains a list of my major academic publications.
