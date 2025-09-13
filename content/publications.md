@@ -12,6 +12,16 @@ papers:
     doi: "10.1038/s41467-025-58106-9"
     link: "https://www.nature.com/articles/s41467-025-58106-9"
 
+  - title: "PathoBase: an integrated One Health approach for zoonotic pathogen genomics analysis"
+    abstract: >
+      The rapid identification and genomic analysis of zoonotic pathogens are essential for effective disease surveillance and outbreak response. PathoBase, an advanced computational platform developed for researchers, addresses regional challenges in pathogen genomics by offering a comprehensive, efficient, and freely accessible tool for genomic data analysis building on core-genome multilocus sequence typing. The platform currently hosts 132 bacterial strains, including *Acinetobacter* (n = 112) and *Staphylococcus* (n = 20), with additional genera under development. The key objectives of PathoBase include establishing a zoonotic pathogen repository for regional surveillance, developing rapid source-tracing technologies to enhance outbreak control, and promoting interdisciplinary collaboration to strengthen public health security.
+    year: 2025
+    image: "2025_oha_pb.png"
+    journal: "One Health Advances"
+    authors: "Li, S., Rong, J., Zhong, L., et al."
+    doi: "doi.org/10.1186/s44280-025-00087-x"
+    link: "https://link.springer.com/article/10.1186/s44280-025-00087-x"
+
   - title: "Genetic landscape and evolution of *Acinetobacter pittii*, an underestimated emerging nosocomial pathogen"
     abstract: >
       As a member of *Acinetobacter calcoaceticus-baumannii* complex, *Acinetobacter pittii* has been an emerging concern in nosocomial infection due to its increasing prevalence and multidrug resistance (MDR). However, its population structure remains broadly unknown, hampering efficient tracing of its transmission and evolution. In this study, we developed a distributed core genome multilocus sequence typing (dcgMLST) for *A. pittii* based on 750 genomes and employed it to map the genetic landscape and evolution of *A. pittii*. The results demonstrated that two hierarchical clustering (HC) levels effectively correspond to genetic diversity from species (HC1100) to natural populations (HC450), as well as that a predominant lineage, HC1100_4, accounts for 33.9% of *A. pittii* strains. Subsequent analysis revealed that specific gene gain and loss events within HC1100_4 are linked to adaptations to environmental stress. Moreover, we identified a cluster of multidrug-resistant plasmids PT_712 responsible for the dissemination of *bla*NDM-1 genes within the genus of *Acinetobacter*. This study provides a framework for characterizing genetic diversity, evolutionary dynamics, molecular population distribution, and tracing of *A. pittii*, which has the potential to improve infection control strategies and public health policy.
@@ -121,6 +131,16 @@ papers:
     authors: "Huang, S., Li, S., Zhao, R. et al."
     doi: "Accepted"
     link: "NA"
+
+  - title: "Geographic containment and virulence-resistance trade-offs drive the evolution of hypervirulent *Klebsiella pneumoniae*"
+    abstract: >
+      The emergence of hypervirulent carbapenem-resistant *Klebsiella pneumoniae* (hvCRKP) represents an alarming convergence of enhanced virulence and extensive drug resistance. Here, we present a comprehensive genomic analysis of 2563 clonal complex 23 (CC23) isolates from 62 countries spanning 1932–2024. Our findings reveal that CC23-K1, the dominant hypervirulent sublineage, emerged approximately 170 years ago and diversified into seven major clades with distinct regional dominance. We observe that carbapenem resistance in CC23-K1 exhibits notable instability, with at least 130 independent acquisitions and 20 losses of resistance genes, suggesting an evolutionary trade-off between hypervirulence and antimicrobial resistance. Experimental validation demonstrates that capsule production physically impedes plasmid conjugation, while isolates carrying blaKPC-2, blaNDM-1, or blaNDM-5 frequently exhibit substantial deletion of virulence determinants. Conversely, blaOXA-48-carrying isolates maintain virulence gene integrity, potentially due to their lower hydrolytic activity and reduced fitness costs. The geographic distribution of these resistance mechanisms correlates with regional antimicrobial usage patterns, with European countries with moderate carbapenem use favoring blaOXA-48 in CC23, while Asian countries with higher consumption show patterns favoring high-efficiency carbapenemases incompatible with complete virulence determinants. We also identified core genomic regions with significantly higher mutation rates in resistant isolates, particularly affecting pathways involved in oxidative phosphorylation and reactive oxygen species production. These findings provide additional insights into CC23 evolution and geographical spread, complementing existing knowledge of carbapenemase distribution patterns observed across *K. pneumoniae* lineages.
+    year: 2025
+    image: "2025_imeta_kp.jpg"
+    journal: "iMeta"
+    authors: "Wu, Y., Pu, F., Yan, Z. et al."
+    doi: "doi.org/10.1002/imt2.70077"
+    link: "https://onlinelibrary.wiley.com/doi/full/10.1002/imt2.70077"
 ---
 
 This page contains a list of my major academic publications.
