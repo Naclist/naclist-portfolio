@@ -19,7 +19,7 @@ papers:
     image: "2025_oha_pb.png"
     journal: "One Health Advances"
     authors: "Li, S., Rong, J., Zhong, L., et al."
-    doi: "doi.org/10.1186/s44280-025-00087-x"
+    doi: "10.1186/s44280-025-00087-x"
     link: "https://link.springer.com/article/10.1186/s44280-025-00087-x"
 
   - title: "Genetic landscape and evolution of *Acinetobacter pittii*, an underestimated emerging nosocomial pathogen"
