@@ -122,10 +122,7 @@ function subgraphByKeyword(raw, keywordIdOrLabel) {
 
 let Graph; // make Graph accessible in helpers
 
-// 适配 GitHub Pages 子路径：不要写死以 / 开头的绝对路径
-const graphJsonUrl = '{{ "publications/pub-keyword-graph.json" | relURL }}';
-
-fetch(graphJsonUrl)
+fetch('https://naclist.github.io/naclist-portfolio/publications/pub-keyword-graph.json')
   .then(r => r.text())                 // 保持原始文本，避免 FG 在对象上动刀
   .then(text => {
     const raw = JSON.parse(text);
@@ -231,3 +228,4 @@ fetch(graphJsonUrl)
   .catch(err => console.error('Graph load error:', err, 'URL=', graphJsonUrl));
 </script>
 {{ end }}
+
