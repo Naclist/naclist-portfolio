@@ -1,11 +1,9 @@
 {{ define "main" }}
 <main class="content-container">
 
-  <!-- 副标题：与 Pubs/Skills 等页面的小标题风格一致，继承正文字体 -->
+  <!-- 和其他页面一致的标题层级 -->
   <h1>{{ .Title }}</h1>
   <h2>Research Interest Network</h2>
-  
-  <div id="graph-container">
 
   <div id="graph-container">
     <div id="graph"></div>
@@ -25,19 +23,36 @@
 </main>
 
 <style>
+  /* 外层容器只做尺寸和内阴影，不再画边框，也禁止 outline，杜绝“双框” */
   #graph-container {
     position: relative;
     width: 100%;
     height: 80vh;
     background-color: #f4f4f4;
-    border: 2px solid #5e7c88;
+    border: none;
     border-radius: 8px;
-    margin-top: 12px;              /* 与副标题间距更贴近各页风格 */
+    margin-top: 12px;
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
     overflow: hidden;
+    outline: none;
   }
+  #graph-container:focus,
+  #graph-container:focus-within { outline: none !important; }
 
   #graph { width: 100%; height: 100%; }
+
+  /* 真正的画布加边框与圆角，只有一层可见边框 */
+  #graph > canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #5e7c88;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+
+  /* 输入框聚焦时取消系统高亮 */
+  #toolbar input:focus { outline: none; box-shadow: 0 0 0 2px rgba(0,0,0,.06); }
 
   #legend {
     position: absolute;
@@ -107,8 +122,11 @@ function subgraphByKeyword(raw, keywordIdOrLabel) {
 
 let Graph; // make Graph accessible in helpers
 
-fetch('/publications/pub-keyword-graph.json')
-  .then(r => r.text())                 // pristine text to avoid ForceGraph mutations
+// 适配 GitHub Pages 子路径：不要写死以 / 开头的绝对路径
+const graphJsonUrl = '{{ "publications/pub-keyword-graph.json" | relURL }}';
+
+fetch(graphJsonUrl)
+  .then(r => r.text())                 // 保持原始文本，避免 FG 在对象上动刀
   .then(text => {
     const raw = JSON.parse(text);
     computeDegrees(raw);
@@ -124,19 +142,18 @@ fetch('/publications/pub-keyword-graph.json')
       .nodeLabel(n => n.type === 'paper' ? `${n.label}\n(${n.journal}, ${n.year})` : null)
       .nodeCanvasObjectMode(() => 'after')
       .nodeCanvasObject((node, ctx, globalScale) => {
-        // highlight halo for matched nodes (no ugly outlines)
         const radius = Math.sqrt(node.val || 1) * 4;
         if (node._match) {
           ctx.save();
           ctx.beginPath();
           ctx.arc(node.x, node.y, radius + 5, 0, 2*Math.PI);
-          ctx.fillStyle = 'rgba(255, 210, 77, 0.25)'; // soft glow
+          ctx.fillStyle = 'rgba(255, 210, 77, 0.25)'; // 高亮光晕
           ctx.fill();
           ctx.restore();
         }
         if (node.type === 'keyword') {
           const fontSize = (6 + (node.degree*0.5 || 0)) / globalScale;
-          ctx.font = `${fontSize}px 'Urbanist', 'El Messiri', sans-serif`;
+          ctx.font = `${fontSize}px 'Urbanist','El Messiri',sans-serif`;
           ctx.fillStyle = '#444';
           ctx.shadowColor = '#ccc';
           ctx.shadowBlur = 3;
@@ -145,7 +162,7 @@ fetch('/publications/pub-keyword-graph.json')
           ctx.fillText(node.label, node.x, node.y);
           ctx.shadowBlur = 0;
         }
-        // removed node border stroke entirely
+        // 不画描边，避免双框既视感
       })
       .linkColor(l => (l.source && l.source._match) || (l.target && l.target._match) ? '#666' : '#999')
       .linkWidth(l => ((l.source && l.source._match) && (l.target && l.target._match)) ? 4 : 2)
@@ -173,7 +190,7 @@ fetch('/publications/pub-keyword-graph.json')
       .maxZoom(2.2)
       .enableNodeDrag(true);
 
-    // initial: full or subgraph from URL (?keyword= or ?focus=)
+    // 初始：全图或 URL 子图 (?keyword= / ?focus=)
     const paramKw = getQueryParam('keyword') || getQueryParam('focus');
     if (paramKw) {
       const sub = subgraphByKeyword(raw, paramKw);
@@ -185,7 +202,7 @@ fetch('/publications/pub-keyword-graph.json')
 
     setTimeout(() => Graph.zoomToFit(400, 40), 300);
 
-    // ---------- search/highlight ----------
+    // ---------- 搜索高亮 ----------
     const box = document.getElementById('search-box');
     let t = null;
     function clearMatches() {
@@ -211,6 +228,6 @@ fetch('/publications/pub-keyword-graph.json')
       t = setTimeout(() => applySearch(v), 120);
     });
   })
-  .catch(err => console.error('Graph load error:', err));
+  .catch(err => console.error('Graph load error:', err, 'URL=', graphJsonUrl));
 </script>
 {{ end }}
