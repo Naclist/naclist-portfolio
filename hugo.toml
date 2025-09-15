@@ -55,3 +55,12 @@ unsafe = true
   url = "/about/"
   weight = 8
 
+[mediaTypes."application/json"]
+  suffixes = ["json"]
+
+[outputFormats.GraphJSON]
+  name = "GraphJSON"
+  mediaType = "application/json"
+  baseName = "pub-keyword-graph"  # -> /publications/pub-keyword-graph.json
+  isPlainText = true
+  notAlternative = true

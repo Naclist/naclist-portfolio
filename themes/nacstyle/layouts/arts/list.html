@@ -1,79 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Arts</title>
-
-    
-    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700&display=swap" rel="stylesheet">
-
-    <link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@400;700&display=swap" rel="stylesheet">
-
-    
-    
-    <link rel="stylesheet" href="//localhost:1313/css/custom.min.e302af2495ec0cf54b4b3b86f9780c56f1959687844a7ac972d3b837aec4da54.css">    
-  </head>
-  <body>
-    <header class="site-header">
-  <div class="site-title">
-    <a href="https://naclist.github.io/naclist-portfolio/">Naclist</a>
-  </div>
-
-  
-  <div class="site-nav-wrapper">
-    <nav class="site-nav">
-      
-        <a href="//localhost:1313/"
-           class="">
-          Home
-        </a>
-      
-        <a href="//localhost:1313/publications/"
-           class="">
-          Publications
-        </a>
-      
-        <a href="//localhost:1313/skills/"
-           class="">
-          Skills
-        </a>
-      
-        <a href="//localhost:1313/ambitions/"
-           class="">
-          Ambitions
-        </a>
-      
-        <a href="//localhost:1313/blogs/"
-           class="">
-          Blogs
-        </a>
-      
-        <a href="//localhost:1313/arts/"
-           class="active">
-          Arts
-        </a>
-      
-        <a href="//localhost:1313/friends/"
-           class="">
-          Kindred Spirits
-        </a>
-      
-        <a href="//localhost:1313/about/"
-           class="">
-          About
-        </a>
-      
-    </nav>
-  </div>
-</header>
-
-
-    
+{{ define "main" }}
 <main class="content-container">
 
-  
-  <h1>Arts</h1>
+  <!-- 副标题：与 Pubs/Skills 等页面的小标题风格一致，继承正文字体 -->
+  <h1>{{ .Title }}</h1>
   <h2>Research Interest Network</h2>
   
   <div id="graph-container">
@@ -103,7 +32,7 @@
     background-color: #f4f4f4;
     border: 2px solid #5e7c88;
     border-radius: 8px;
-    margin-top: 12px;               
+    margin-top: 12px;              /* 与副标题间距更贴近各页风格 */
     box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
     overflow: hidden;
   }
@@ -135,7 +64,7 @@
 
 <script src="https://unpkg.com/force-graph"></script>
 <script>
-
+// ---------- helpers ----------
 const getQueryParam = (name) => new URLSearchParams(window.location.search).get(name);
 const idOf = v => (v && typeof v === 'object') ? v.id : v;
 const slug = s => String(s || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -176,10 +105,10 @@ function subgraphByKeyword(raw, keywordIdOrLabel) {
   return sub;
 }
 
-let Graph; 
+let Graph; // make Graph accessible in helpers
 
 fetch('/publications/pub-keyword-graph.json')
-  .then(r => r.text())                 
+  .then(r => r.text())                 // pristine text to avoid ForceGraph mutations
   .then(text => {
     const raw = JSON.parse(text);
     computeDegrees(raw);
@@ -195,13 +124,13 @@ fetch('/publications/pub-keyword-graph.json')
       .nodeLabel(n => n.type === 'paper' ? `${n.label}\n(${n.journal}, ${n.year})` : null)
       .nodeCanvasObjectMode(() => 'after')
       .nodeCanvasObject((node, ctx, globalScale) => {
-        
+        // highlight halo for matched nodes (no ugly outlines)
         const radius = Math.sqrt(node.val || 1) * 4;
         if (node._match) {
           ctx.save();
           ctx.beginPath();
           ctx.arc(node.x, node.y, radius + 5, 0, 2*Math.PI);
-          ctx.fillStyle = 'rgba(255, 210, 77, 0.25)'; 
+          ctx.fillStyle = 'rgba(255, 210, 77, 0.25)'; // soft glow
           ctx.fill();
           ctx.restore();
         }
@@ -216,7 +145,7 @@ fetch('/publications/pub-keyword-graph.json')
           ctx.fillText(node.label, node.x, node.y);
           ctx.shadowBlur = 0;
         }
-        
+        // removed node border stroke entirely
       })
       .linkColor(l => (l.source && l.source._match) || (l.target && l.target._match) ? '#666' : '#999')
       .linkWidth(l => ((l.source && l.source._match) && (l.target && l.target._match)) ? 4 : 2)
@@ -244,7 +173,7 @@ fetch('/publications/pub-keyword-graph.json')
       .maxZoom(2.2)
       .enableNodeDrag(true);
 
-    
+    // initial: full or subgraph from URL (?keyword= or ?focus=)
     const paramKw = getQueryParam('keyword') || getQueryParam('focus');
     if (paramKw) {
       const sub = subgraphByKeyword(raw, paramKw);
@@ -256,7 +185,7 @@ fetch('/publications/pub-keyword-graph.json')
 
     setTimeout(() => Graph.zoomToFit(400, 40), 300);
 
-    
+    // ---------- search/highlight ----------
     const box = document.getElementById('search-box');
     let t = null;
     function clearMatches() {
@@ -284,31 +213,4 @@ fetch('/publications/pub-keyword-graph.json')
   })
   .catch(err => console.error('Graph load error:', err));
 </script>
-
-    <footer class="site-footer" style="text-align: center; padding: 2rem 0;">
-  <div class="social-icons">
-    <a href="https://github.com/naclist" target="_blank">
-      <img class="social-icon" src="//localhost:1313/images/github-color.svg" alt="GitHub">
-    </a>
-    <a href="https://scholar.google.com/citations?user=jjvdIuYAAAAJ" target="_blank">
-      <img class="social-icon" src="//localhost:1313/images/scholar-color.svg" alt="Google Scholar">
-    </a>
-    <a href="mailto:Zxzzzhu@gmail.com">
-      <img class="social-icon" src="//localhost:1313/images/email-color.svg" alt="Email">
-    </a>
-  </div>
-  <p>© 2025 Naclist. All rights reserved.</p>
-</footer>
-
-    <script>
-document.addEventListener("DOMContentLoaded", () => {
-  document.addEventListener("click", e => {
-    if (!e.target.classList.contains("read-more-toggle")) return;
-    const box = e.target.closest(".abstract");
-    box.querySelector(".abstract-short").classList.toggle("hidden");
-    box.querySelector(".abstract-full").classList.toggle("hidden");
-  });
-});
-</script>
-  </body>
-</html>
+{{ end }}

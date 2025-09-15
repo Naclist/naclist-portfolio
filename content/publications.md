@@ -1,8 +1,10 @@
 ---
 title: "Publications"
 url:   "/publications/"
+type: "publications" 
+outputs: ["HTML","GraphJSON"]
 papers:
-  - title: "Emergence and global spread of a dominant multidrug-resistant clade within *Acinetobacter baumannii*"
+  - title: "Emergence and global spread of asss dominant multidrug-resistant clade within *Acinetobacter baumannii*"
     abstract: >
       The proliferation of multi-drug resistant (MDR) bacteria is driven by the global spread of epidemic lineages that accumulate antimicrobial resistance genes (ARGs). *Acinetobacter baumannii*, a leading cause of nosocomial infections, displays resistance to most frontline antimicrobials and represents a significant challenge to public health. In this study, we conduct a comprehensive genomic analysis of over 15,000 *A. baumannii* genomes to identify a predominant epidemic super-lineage (ESL) accounting for approximately 70% of global isolates. Through hierarchical classification of the ESL into distinct lineages, clusters, and clades, we identified a stepwise evolutionary trajectory responsible for the worldwide expansion and transmission of *A. baumannii* over the last eight decades. We observed the rise and global spread of a previously unrecognized Clade 2.5.6, which emerged in East Asia in 2006. The epidemic of the clade is linked to the ongoing acquisition of ARGs and virulence factors facilitated by genetic recombination. Our results highlight the necessity for One Health-oriented research and interventions to address the spread of this MDR pathogen.
     year: 2025
@@ -11,6 +13,19 @@ papers:
     authors: "Li, S., Jiang, G., Wang, S. et al."
     doi: "10.1038/s41467-025-58106-9"
     link: "https://www.nature.com/articles/s41467-025-58106-9"
+    keywords: ['Bacteria genetics', 'Acinetobacter', 'Databases', 'AMR', 'Recombination', 'Metagenomics', 'Genomics', 'Nosocomial Infection', 'Transmission Modelling']
+
+  - title: "PathoBase: an integrated One Health approach for zoonotic pathogen genomics analysis"
+    abstract: >
+      The rapid identification and genomic analysis of zoonotic pathogens are essential for effective disease surveillance and outbreak response. PathoBase, an advanced computational platform developed for researchers, addresses regional challenges in pathogen genomics by offering a comprehensive, efficient, and freely accessible tool for genomic data analysis building on core-genome multilocus sequence typing. The platform currently hosts 132 bacterial strains, including *Acinetobacter* (n = 112) and *Staphylococcus* (n = 20), with additional genera under development. The key objectives of PathoBase include establishing a zoonotic pathogen repository for regional surveillance, developing rapid source-tracing technologies to enhance outbreak control, and promoting interdisciplinary collaboration to strengthen public health security.
+    year: 2025
+    image: "2025_oha_pb.png"
+    journal: "One Health Advances"
+    authors: "Li, S., Rong, J., Zhong, L., et al."
+    doi: "doi.org/10.1186/s44280-025-00087-x"
+    link: "https://link.springer.com/article/10.1186/s44280-025-00087-x"
+    keywords: ['Acinetobacter', 'Databases', 'Staphylococcus']
+    
 
   - title: "Genetic landscape and evolution of *Acinetobacter pittii*, an underestimated emerging nosocomial pathogen"
     abstract: >
@@ -21,6 +36,7 @@ papers:
     authors: "Wang, S., Zhou, Y., Wang, Y. et al."
     doi: "10.1038/s42003-025-08156-y"
     link: "https://www.nature.com/articles/s42003-025-08156-y"
+    keywords: ['Acinetobacter', 'Databases', 'AMR', 'Plasmids', 'Genomics', 'Bacteria genetics', 'Nosocomial Infection', 'Transmission Modelling']
 
   - title: "Uncovering a cryptic *Streptococcus suis* endemic post-outbreak: Evidence of host switching to humans"
     abstract: >
@@ -31,6 +47,7 @@ papers:
     authors: "Zhu, S., Li, S., Wu, B. et al."
     doi: "10.1016/j.scitotenv.2024.178307"
     link: "https://www.sciencedirect.com/science/article/abs/pii/S0048969724084651"
+    keywords: ['Streptococcus', 'Metabolite Reconstruction', 'Genomics', 'Bacteria genetics', 'Human-Animals Infection', 'Transmission Modelling']
 
   - title: "KleTy: integrated typing scheme for core genome and plasmids reveals repeated emergence of multi-drug resistant epidemic lineages in *Klebsiella* worldwide"
     abstract: >
@@ -41,6 +58,7 @@ papers:
     authors: "Li, H., Liu, X., Li, S. et al."
     doi: "10.1186/s13073-024-01399-0"
     link: "https://link.springer.com/article/10.1186/s13073-024-01399-0"
+    keywords: ['Klebsiella', 'Databases', 'Plasmids', 'Genomics', 'Bacteria genetics', 'Nosocomial Infection']
 
   - title: "Epidemiological and molecular investigations of sequential outbreaks of *Campylobacter jejuni* infecting adults and schoolchildren in southeastern China, 2021-2022"
     abstract: >
@@ -51,6 +69,7 @@ papers:
     authors: "Zhang, L., Shao, Y., Li, S. et al."
     doi: "10.1016/j.ijid.2024.107055"
     link: "https://www.sciencedirect.com/science/article/pii/S1201971224001255"
+    keywords: ['Campylobacter', 'Genomics', 'Bacteria genetics', 'Food-borne Infection', 'Community Infection']
 
   - title: "Resurgence of *Mycoplasma* pneumonia by macrolide-resistant epidemic clones in China"
     abstract: >
@@ -61,6 +80,7 @@ papers:
     authors: "Li, H., Li, S., Yang, H. et al."
     doi: "10.1016/S2666-5247(23)00405-6"
     link: "https://www.thelancet.com/journals/lanmic/article/PIIS2666-5247(23)00405-6/fulltext"
+    keywords: ['AMR', 'Metagenomics', 'Mycoplasma', 'Genomics', 'Bacteria genetics', 'Community Infection']
 
   - title: "Multicenter Genomic Epidemiology Reveals Distinct Short-Term and Long-Term Crab Transmission Patterns in Zhejiang, China"
     abstract: >
@@ -71,6 +91,7 @@ papers:
     authors: "Li, S., Wang, S., Pu, F. et al."
     doi: "10.2139/ssrn.5043757"
     link: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5043757"
+    keywords: ['Bacteria genetics', 'Acinetobacter', 'AMR', 'Plasmids', 'Transmission Modelling', 'Genomics', 'Nosocomial Infection']
 
   - title: "Centralized industrialization of pork in Europe and America contributes to the global spread of *Salmonella enterica*"
     abstract: >
@@ -81,6 +102,7 @@ papers:
     authors: "Li, H., Wu, Y., Feng, D. et al."
     doi: "10.1038/s43016-024-00968-1"
     link: "https://www.nature.com/articles/s43016-024-00968-1"
+    keywords: ['Transmission Modelling', 'Salmonella', 'AMR', 'Bacteria genetics', 'Genomics', 'Nosocomial Infection']
 
   - title: "Characterization of microbial community and antibiotic resistome in intra urban water, Wenzhou China"
     abstract: >
@@ -91,6 +113,7 @@ papers:
     authors: "Ye, S., Li, S., Su, C. et al."
     doi: "10.3389/fmicb.2023.1169476"
     link: "https://www.frontiersin.org/journals/microbiology/articles/10.3389/fmicb.2023.1169476/full"
+    keywords: ['AMR', 'Metagenomics', 'Microbiome']
 
   - title: "The correlation between dysfunctional intestinal flora and pathology feature of patients with pulmonary tuberculosis"
     abstract: >
@@ -101,6 +124,7 @@ papers:
     authors: "Ye, S., Wang, L., Li, S. et al."
     doi: "10.3389/fcimb.2022.1090889"
     link: "https://www.frontiersin.org/journals/cellular-and-infection-microbiology/articles/10.3389/fcimb.2022.1090889/full"
+    keywords: ['Metagenomics', 'Microbiome', 'Mycobacteria']
 
   - title: "Emergence of carbapenem-resistant XDR *Salmonella enterica* in pediatric patients in South China: a genomic perspective study"
     abstract: >
@@ -111,6 +135,7 @@ papers:
     authors: "Feng, X., Li, S., Huang, D. et al."
     doi: "10.1016/j.ijantimicag.2025.107589"
     link: "https://www.sciencedirect.com/science/article/abs/pii/S092485792500144X"
+    keywords: ['Transmission Modelling', 'Salmonella', 'AMR', 'Bacteria genetics', 'Genomics', 'Nosocomial Infection']
 
   - title: "Post-COVID-19 disruption of the respiratory microbiome modulates *Mycoplasma* pneumoniae: a multi-center retrospective investigation study"
     abstract: >
@@ -121,6 +146,18 @@ papers:
     authors: "Huang, S., Li, S., Zhao, R. et al."
     doi: "Accepted"
     link: "NA"
+    keywords: ['AMR', 'Metagenomics', 'Mycoplasma', 'Genomics', 'Community Infection', 'Community Modelling', 'Microbiome']
+
+  - title: "Geographic containment and virulence-resistance trade-offs drive the evolution of hypervirulent *Klebsiella pneumoniae*"
+    abstract: >
+      The emergence of hypervirulent carbapenem-resistant *Klebsiella pneumoniae* (hvCRKP) represents an alarming convergence of enhanced virulence and extensive drug resistance. Here, we present a comprehensive genomic analysis of 2563 clonal complex 23 (CC23) isolates from 62 countries spanning 1932–2024. Our findings reveal that CC23-K1, the dominant hypervirulent sublineage, emerged approximately 170 years ago and diversified into seven major clades with distinct regional dominance. We observe that carbapenem resistance in CC23-K1 exhibits notable instability, with at least 130 independent acquisitions and 20 losses of resistance genes, suggesting an evolutionary trade-off between hypervirulence and antimicrobial resistance. Experimental validation demonstrates that capsule production physically impedes plasmid conjugation, while isolates carrying blaKPC-2, blaNDM-1, or blaNDM-5 frequently exhibit substantial deletion of virulence determinants. Conversely, blaOXA-48-carrying isolates maintain virulence gene integrity, potentially due to their lower hydrolytic activity and reduced fitness costs. The geographic distribution of these resistance mechanisms correlates with regional antimicrobial usage patterns, with European countries with moderate carbapenem use favoring blaOXA-48 in CC23, while Asian countries with higher consumption show patterns favoring high-efficiency carbapenemases incompatible with complete virulence determinants. We also identified core genomic regions with significantly higher mutation rates in resistant isolates, particularly affecting pathways involved in oxidative phosphorylation and reactive oxygen species production. These findings provide additional insights into CC23 evolution and geographical spread, complementing existing knowledge of carbapenemase distribution patterns observed across *K. pneumoniae* lineages.
+    year: 2025
+    image: "2025_imeta_kp.jpg"
+    journal: "iMeta"
+    authors: "Wu, Y., Pu, F., Yan, Z. et al."
+    doi: "doi.org/10.1002/imt2.70077"
+    link: "https://onlinelibrary.wiley.com/doi/full/10.1002/imt2.70077"
+    keywords: ['Klebsiella', 'Transmission Modelling', 'AMR', 'Genomics', 'Bacteria genetics', 'Nosocomial Infection']
 ---
 
 This page contains a list of my major academic publications.

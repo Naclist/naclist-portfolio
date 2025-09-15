@@ -47,6 +47,14 @@
               <span class="read-more-toggle">[Read less]</span>
             </div>
           </div>
+
+          {{ if .keywords }}
+          <div class="pub-keywords">
+            {{ range .keywords }}
+              <a class="keyword-badge" href="/arts/?keyword={{ . | urlquery }}">{{ . }}</a>
+            {{ end }}
+          </div>
+          {{ end }}
         </div>
       </div>
 
@@ -55,6 +63,31 @@
   {{ end }}
   </div>                       {{/* 关闭最后一个 publication-block */}}
 </main>
+
+<style>
+.pub-keywords {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.keyword-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #f6f6f6;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.15);
+  font-size: 13px;
+  color: #444;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.keyword-badge:hover {
+  background-color: #ffe4e1;
+  transform: translateY(-1px);
+  color: #b33c3c;
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

@@ -1,0 +1,30 @@
+{{- $nodes := slice -}}
+{{- $edges := slice -}}
+{{- $kwset := dict -}}
+
+{{- $papers := .Params.papers | default (slice) -}}
+{{- range $i, $p := $papers -}}
+  {{- $pid := printf "p-%d" $i -}}
+  {{- $title := $p.title | default (printf "paper-%d" $i) -}}
+  {{- $url := $p.link | default "" -}}
+  {{- $year := $p.year | default 0 -}}
+  {{- $journal := $p.journal | default "" -}}
+
+  {{- $nodes = $nodes | append (dict "id" $pid "label" $title "type" "paper" "url" $url "year" $year "journal" $journal) -}}
+
+  {{- $kws := $p.keywords | default (slice) -}}
+  {{- range $kws -}}
+    {{- $kraw := . -}}
+    {{- $kid := printf "k-%s" (urlize (printf "%v" $kraw)) -}}
+    {{- if not (index $kwset $kid) -}}
+      {{- $nodes = $nodes | append (dict "id" $kid "label" $kraw "type" "keyword") -}}
+      {{- $kwset = merge $kwset (dict $kid true) -}}
+    {{- end -}}
+    {{- $edges = $edges | append (dict "source" $pid "target" $kid) -}}
+  {{- end -}}
+{{- end -}}
+
+{
+  "nodes": {{ $nodes | jsonify }},
+  "links": {{ $edges | jsonify }}
+}

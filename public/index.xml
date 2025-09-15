@@ -37,34 +37,6 @@
       <description>Reaching Out for a PhD Opportunity</description>
     </item>
     <item>
-      <title>About</title>
-      <link>//localhost:1313/about/</link>
-      <pubDate>Fri, 11 Jul 2025 09:57:48 +0800</pubDate>
-      <guid>//localhost:1313/about/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Arts</title>
-      <link>//localhost:1313/arts/</link>
-      <pubDate>Fri, 11 Jul 2025 09:57:48 +0800</pubDate>
-      <guid>//localhost:1313/arts/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Ambitions</title>
-      <link>//localhost:1313/ambitions/</link>
-      <pubDate>Fri, 11 Jul 2025 09:57:47 +0800</pubDate>
-      <guid>//localhost:1313/ambitions/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Friends</title>
-      <link>//localhost:1313/friends/</link>
-      <pubDate>Fri, 11 Jul 2025 09:57:47 +0800</pubDate>
-      <guid>//localhost:1313/friends/</guid>
-      <description></description>
-    </item>
-    <item>
       <title>Publications</title>
       <link>//localhost:1313/publications/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
