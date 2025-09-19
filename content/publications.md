@@ -144,8 +144,8 @@ papers:
     image: "2025_emi_mp.png"
     journal: "Emerging Microbes & Infections"
     authors: "Huang, S., Li, S., Zhao, R. et al."
-    doi: "Accepted"
-    link: "NA"
+    doi: "10.1080/22221751.2025.2562053"
+    link: "https://www.tandfonline.com/doi/full/10.1080/22221751.2025.2562053"
     keywords: ['AMR', 'Metagenomics', 'Mycoplasma', 'Genomics', 'Community Infection', 'Community Modelling', 'Microbiome']
 
   - title: "Geographic containment and virulence-resistance trade-offs drive the evolution of hypervirulent *Klebsiella pneumoniae*"
