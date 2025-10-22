@@ -49,7 +49,7 @@
 {{ define "scripts" }}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const IMG_DIR = '{{ "sources/ab_china_dynamics_source/figures" | relURL }}';
+  const IMG_DIR = '{{ "sources/ab_china_dynamics_source/figures" | absURL }}';
   const slider = document.getElementById('yearSlider');
   const imgA = document.getElementById('imgA');
   const imgB = document.getElementById('imgB');
@@ -153,3 +153,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 {{ end }}
+
