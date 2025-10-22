@@ -19,11 +19,24 @@
     <loc>//localhost:1313/blogs/blog1/</loc>
     <lastmod>2025-07-14T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>//localhost:1313/about/</loc>
+    <lastmod>2025-07-11T09:57:48+08:00</lastmod>
+  </url><url>
+    <loc>//localhost:1313/ambitions/</loc>
+    <lastmod>2025-07-11T09:57:47+08:00</lastmod>
+  </url><url>
+    <loc>//localhost:1313/friends/</loc>
+    <lastmod>2025-07-11T09:57:47+08:00</lastmod>
+  </url><url>
     <loc>//localhost:1313/arts/</loc>
   </url><url>
     <loc>//localhost:1313/categories/</loc>
   </url><url>
+    <loc>//localhost:1313/sources/ab_china_dynamics/</loc>
+  </url><url>
     <loc>//localhost:1313/publications/</loc>
+  </url><url>
+    <loc>//localhost:1313/sources/</loc>
   </url><url>
     <loc>//localhost:1313/tags/</loc>
   </url>
