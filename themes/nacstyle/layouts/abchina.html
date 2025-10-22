@@ -34,7 +34,7 @@
       </button>
     </div>
 
-    <!-- 时间刻度，与滑条同一左边界 -->
+    <!-- 时间刻度 -->
     <div class="w-full" style="width:90%;display:grid;grid-template-columns:5% 80% 5% 5%;margin-top:6px;">
       <div></div>
       <div id="yearTicks"
@@ -43,114 +43,113 @@
       <div></div><div></div>
     </div>
   </div>
-
-  <script>
-    // 使用 Hugo 的相对路径，确保 GitHub Pages 不丢失路径前缀
-    const IMG_DIR = '{{ "sources/ab_china_dynamics/figures" | relURL }}';
-
-    const slider = document.getElementById('yearSlider');
-    const imgA = document.getElementById('imgA');
-    const imgB = document.getElementById('imgB');
-    const playBtn = document.getElementById('playBtn');
-    const btnIcon = document.getElementById('btnIcon');
-    const ticksBox = document.getElementById('yearTicks');
-    const viewer = document.getElementById('viewer');
-    let currentImg = imgA;
-
-    const minYear = Number(slider.min), maxYear = Number(slider.max);
-    const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
-    const yearToFile = y => `${IMG_DIR}/${y === 2009 ? 'less_than_2010' : y}.png`;
-    const yearToLabel = y => y === 2009 ? '<2010' : `${y}`;
-
-    years.forEach(y => { const img = new Image(); img.src = yearToFile(y); });
-
-    const majorYears = [2010, 2015, 2020, 2024];
-    for (let y = minYear; y <= maxYear; y++) {
-      const sp = document.createElement('span');
-      sp.className = 'tick';
-      sp.dataset.year = y;
-      sp.textContent = majorYears.includes(y) ? `${y}` : '•';
-      ticksBox.appendChild(sp);
-    }
-
-    function highlightTick(activeYear) {
-      document.querySelectorAll('.tick').forEach(t => {
-        const y = Number(t.dataset.year);
-        if (y === activeYear) {
-          t.style.color = '#000';
-          t.style.fontWeight = '700';
-          t.style.textShadow = '0 0 4px rgba(0,0,0,0.15)';
-        } else {
-          t.style.color = '#b0b0b0';
-          t.style.fontWeight = '400';
-          t.style.textShadow = 'none';
-        }
-      });
-    }
-
-    function updateSliderFill(val) {
-      const pct = ((val - minYear) / (maxYear - minYear)) * 100;
-      slider.style.background = `linear-gradient(to right,#3b82f6 0%,#3b82f6 ${pct}%,#d1d5db ${pct}%,#d1d5db 100%)`;
-    }
-
-    function crossfadeTo(src) {
-      const nextImg = currentImg === imgA ? imgB : imgA;
-      nextImg.src = src;
-      nextImg.onload = () => {
-        nextImg.style.opacity = '1';
-        currentImg.style.opacity = '0';
-        currentImg = nextImg;
-      };
-    }
-
-    function updateFrame(val) {
-      const y = Number(val);
-      updateSliderFill(y);
-      highlightTick(y);
-      const targetSrc = yearToFile(y);
-      // 绝对 URL 对比时避免 endsWith 失效
-      if (!currentImg.src.includes(targetSrc)) crossfadeTo(targetSrc);
-      document.title = `Dynamics of 2.5 — ${yearToLabel(y)}`;
-    }
-
-    slider.addEventListener('input', e => { updateFrame(e.target.value); stopAutoplay(); });
-
-    let autoplay = false;
-    let currentYear = minYear;
-    let lastTime = 0;
-
-    function animate(time) {
-      if (!autoplay) return;
-      const dt = time - lastTime;
-      if (dt > 300) {
-        currentYear = currentYear < maxYear ? currentYear + 1 : minYear;
-        slider.value = currentYear;
-        updateFrame(currentYear);
-        lastTime = time;
-      }
-      requestAnimationFrame(animate);
-    }
-
-    function startAutoplay() {
-      autoplay = true;
-      btnIcon.innerHTML = '<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>';
-      requestAnimationFrame(animate);
-    }
-
-    function stopAutoplay() {
-      autoplay = false;
-      btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-    }
-
-    playBtn.addEventListener('click', () => { autoplay ? stopAutoplay() : startAutoplay(); });
-    viewer.addEventListener('click', () => { autoplay ? stopAutoplay() : startAutoplay(); });
-
-    (function init() {
-      const firstSrc = yearToFile(minYear);
-      currentImg.src = firstSrc;
-      currentImg.style.opacity = '1';
-      updateFrame(minYear);
-    })();
-  </script>
 </main>
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const IMG_DIR = '{{ "sources/ab_china_dynamics_source/figures" | relURL }}';
+  const slider = document.getElementById('yearSlider');
+  const imgA = document.getElementById('imgA');
+  const imgB = document.getElementById('imgB');
+  const playBtn = document.getElementById('playBtn');
+  const btnIcon = document.getElementById('btnIcon');
+  const ticksBox = document.getElementById('yearTicks');
+  const viewer = document.getElementById('viewer');
+  let currentImg = imgA;
+
+  const minYear = Number(slider.min), maxYear = Number(slider.max);
+  const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+  const yearToFile = y => `${IMG_DIR}/${y === 2009 ? 'less_than_2010' : y}.png`;
+  const yearToLabel = y => y === 2009 ? '<2010' : `${y}`;
+
+  years.forEach(y => { const img = new Image(); img.src = yearToFile(y); });
+
+  const majorYears = [2010, 2015, 2020, 2024];
+  for (let y = minYear; y <= maxYear; y++) {
+    const sp = document.createElement('span');
+    sp.className = 'tick';
+    sp.dataset.year = y;
+    sp.textContent = majorYears.includes(y) ? `${y}` : '•';
+    ticksBox.appendChild(sp);
+  }
+
+  function highlightTick(activeYear) {
+    document.querySelectorAll('.tick').forEach(t => {
+      const y = Number(t.dataset.year);
+      if (y === activeYear) {
+        t.style.color = '#000';
+        t.style.fontWeight = '700';
+        t.style.textShadow = '0 0 4px rgba(0,0,0,0.15)';
+      } else {
+        t.style.color = '#b0b0b0';
+        t.style.fontWeight = '400';
+        t.style.textShadow = 'none';
+      }
+    });
+  }
+
+  function updateSliderFill(val) {
+    const pct = ((val - minYear) / (maxYear - minYear)) * 100;
+    slider.style.background = `linear-gradient(to right,#3b82f6 0%,#3b82f6 ${pct}%,#d1d5db ${pct}%,#d1d5db 100%)`;
+  }
+
+  function crossfadeTo(src) {
+    const nextImg = currentImg === imgA ? imgB : imgA;
+    nextImg.src = src;
+    nextImg.onload = () => {
+      nextImg.style.opacity = '1';
+      currentImg.style.opacity = '0';
+      currentImg = nextImg;
+    };
+  }
+
+  function updateFrame(val) {
+    const y = Number(val);
+    updateSliderFill(y);
+    highlightTick(y);
+    const targetSrc = yearToFile(y);
+    if (!currentImg.src.endsWith(targetSrc)) crossfadeTo(targetSrc);
+    document.title = `Dynamics of 2.5 — ${yearToLabel(y)}`;
+  }
+
+  slider.addEventListener('input', e => { updateFrame(e.target.value); stopAutoplay(); });
+
+  let autoplay = false;
+  let currentYear = minYear;
+  let lastTime = 0;
+
+  function animate(time) {
+    if (!autoplay) return;
+    const dt = time - lastTime;
+    if (dt > 300) {
+      currentYear = currentYear < maxYear ? currentYear + 1 : minYear;
+      slider.value = currentYear;
+      updateFrame(currentYear);
+      lastTime = time;
+    }
+    requestAnimationFrame(animate);
+  }
+
+  function startAutoplay() {
+    autoplay = true;
+    btnIcon.innerHTML = '<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>';
+    requestAnimationFrame(animate);
+  }
+
+  function stopAutoplay() {
+    autoplay = false;
+    btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  }
+
+  playBtn.addEventListener('click', () => { autoplay ? stopAutoplay() : startAutoplay(); });
+  viewer.addEventListener('click', () => { autoplay ? stopAutoplay() : startAutoplay(); });
+
+  const firstSrc = yearToFile(minYear);
+  currentImg.src = firstSrc;
+  currentImg.style.opacity = '1';
+  updateFrame(minYear);
+});
+</script>
 {{ end }}
