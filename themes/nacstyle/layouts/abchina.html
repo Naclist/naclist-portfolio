@@ -45,7 +45,9 @@
   </div>
 
   <script>
-    const IMG_DIR = '/sources/ab_china_dynamics/figures';
+    // 使用 Hugo 的相对路径，确保 GitHub Pages 不丢失路径前缀
+    const IMG_DIR = '{{ "sources/ab_china_dynamics/figures" | relURL }}';
+
     const slider = document.getElementById('yearSlider');
     const imgA = document.getElementById('imgA');
     const imgB = document.getElementById('imgB');
@@ -106,7 +108,8 @@
       updateSliderFill(y);
       highlightTick(y);
       const targetSrc = yearToFile(y);
-      if (!currentImg.src.endsWith(targetSrc)) crossfadeTo(targetSrc);
+      // 绝对 URL 对比时避免 endsWith 失效
+      if (!currentImg.src.includes(targetSrc)) crossfadeTo(targetSrc);
       document.title = `Dynamics of 2.5 — ${yearToLabel(y)}`;
     }
 
