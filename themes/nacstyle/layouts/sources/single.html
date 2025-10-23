@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function animate(time) {
     if (!autoplay) return;
     const dt = time - lastTime;
-    if (dt > 600) {
+    if (dt > 700) {
       currentYear = currentYear < maxYear ? currentYear + 1 : minYear;
       slider.value = currentYear;
       updateFrame(currentYear);
@@ -153,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 {{ end }}
+
 
 
 
