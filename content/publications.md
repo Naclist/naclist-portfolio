@@ -158,6 +158,17 @@ papers:
     doi: "doi.org/10.1002/imt2.70077"
     link: "https://onlinelibrary.wiley.com/doi/full/10.1002/imt2.70077"
     keywords: ['Klebsiella', 'Transmission Modelling', 'AMR', 'Genomics', 'Bacteria genetics', 'Nosocomial Infection']
+
+  - title: "Healthcare Infrastructure Shapes Evolutionary Trade-offs and Geographic Dissemination of Multidrug-Resistant *Acinetobacter baumannii*"
+    abstract: >
+      Antimicrobial-resistant pathogens pose an existential threat to modern medicine, yet the evolutionary forces driving their adaptation in healthcare systems remain largely unexplored. We revealed that hospital network architecture functions as a primary selective pressure, driving pathogen evolution through infrastructure-dependent virulence-transmission trade-offs. Phylogenomic analysis of 5,023 *Acinetobacter baumannii* isolates across China's centralized healthcare system identifies two co-existing evolutionary strategies: a virulence-optimized clade (ESL2.4) that spread slowly (20.4 km per year) in low-connectivity hospitals, and a transmission-optimized clade (ESL2.5) that disseminate rapidly (65.2 km per year) through mega-city healthcare hubs, likely attributed to its capsule conversion and increased upper respiratory colonization. Comparative analysis with European *A. baumannii* populations demonstrates that healthcare connectivity, not geography, governs pathogen distribution through convergent genomic adaptations. Our simulation suggests competitive asymmetries of the two clades, following the ecotype principle and enabling stable coexistence. The COVID-19 pandemic provided a natural experiment validating these mechanisms: outpatient restrictions reduced transmission-optimized lineage spread by 89%, while virulence-optimized lineage persisted through inpatient networks. These findings establish healthcare infrastructure as a critical evolutionary driver with immediate implications for predicting and controlling antimicrobial resistance emergence across diverse healthcare systems.
+    year: 2026
+    image: "2026_pp_ab.png"
+    journal: "Preprint"
+    authors: "Li, S., Wu, Y., Yan, Z. et al."
+    doi: "doi.org/10.64898/2026.01.06.697983"
+    link: "https://onlinelibrary.wiley.com/doi/full/10.1002/imt2.70077"
+    keywords: ['Acinetobacter', 'Transmission Modelling', 'AMR', 'Genomics', 'Bacteria genetics', 'Nosocomial Infection']
 ---
 
 This page contains a list of my major academic publications.
