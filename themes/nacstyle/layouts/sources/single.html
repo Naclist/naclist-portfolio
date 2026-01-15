@@ -2,6 +2,7 @@
 <main class="content-container flex flex-col items-center justify-center px-4 py-8 text-center">
   <h1 class="text-3xl font-semibold mb-6">Dynamics of 2.5 in China</h1>
 
+  <!-- 主容器 -->
   <div class="bg-gray-100 border border-gray-300 rounded-2xl shadow-sm p-6 flex flex-col items-center"
        style="max-width:520px;margin:0 auto;">
 
@@ -42,6 +43,15 @@
                   font-size:.7rem;color:#b0b0b0;letter-spacing:.5px;"></div>
       <div></div><div></div>
     </div>
+
+    <!-- 跳转按钮 -->
+    <div class="mt-6">
+      <a href="https://naclist.github.io/naclist-portfolio/sources/network_simulation/"
+         class="inline-block px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition">
+         Explore Network Simulation
+      </a>
+    </div>
+
   </div>
 </main>
 {{ end }}
@@ -64,8 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const yearToFile = y => `${IMG_DIR}/${y === 2009 ? 'less_than_2010' : y}.png`;
   const yearToLabel = y => y === 2009 ? '<2010' : `${y}`;
 
+  // 预加载所有图片
   years.forEach(y => { const img = new Image(); img.src = yearToFile(y); });
 
+  // 刻度
   const majorYears = [2010, 2015, 2020, 2024];
   for (let y = minYear; y <= maxYear; y++) {
     const sp = document.createElement('span');
@@ -123,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function animate(time) {
     if (!autoplay) return;
     const dt = time - lastTime;
-    if (dt > 700) {
+    if (dt > 300) {
       currentYear = currentYear < maxYear ? currentYear + 1 : minYear;
       slider.value = currentYear;
       updateFrame(currentYear);
@@ -153,7 +165,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 {{ end }}
-
-
-
-
