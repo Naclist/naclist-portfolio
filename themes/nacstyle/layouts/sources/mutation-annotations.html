@@ -1,0 +1,88 @@
+{{ define "main" }}
+<main class="content-container source-page mutation-source-page">
+  <header class="mutation-page-header">
+    <p class="mutation-kicker">Interactive supplementary material</p>
+    <h1>{{ .Title }}</h1>
+    <p>
+      Explore synonymous and protein-changing mutations across the MDR-TJ reference chromosome.
+      Mutation records are grouped into 10-kb windows and compared between ESL2.5 and non-ESL2.5 isolates.
+    </p>
+  </header>
+
+  <section
+    class="mutation-viewer"
+    data-mutation-viewer
+    data-data-url="{{ "sources/ab_mutation_annotations/data/mutation_blocks.json" | absURL }}"
+    data-details-url="{{ "sources/ab_mutation_annotations/data/mutation_annotations_10kb.tsv" | absURL }}"
+  >
+    <div class="mutation-toolbar" aria-label="Mutation viewer controls">
+      <label>
+        Highlighted annotation
+        <select data-effect-select>
+          <option value="protein-changing">Protein-changing</option>
+          <option value="synonymous">Synonymous</option>
+          <option value="regulatory/flanking">Regulatory/flanking</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <label>
+        Filter selected-window records
+        <input data-record-filter type="search" placeholder="Gene, product or AA change">
+      </label>
+      <a class="mutation-download" data-details-link download>Download per-site annotations</a>
+    </div>
+
+    <p class="mutation-status" data-viewer-status role="status">Loading mutation annotations…</p>
+
+    <div class="mutation-workspace" hidden data-viewer-workspace>
+      <div class="mutation-plot-card">
+        <div class="mutation-legend" aria-label="Plot legend">
+          <span><i class="mutation-swatch mutation-swatch-esl"></i>ESL2.5</span>
+          <span><i class="mutation-swatch mutation-swatch-other"></i>Non-ESL2.5</span>
+          <span><i class="mutation-swatch mutation-swatch-highlight"></i><span data-effect-label>Protein-changing</span> subset</span>
+        </div>
+        <svg
+          class="mutation-plot"
+          data-mutation-plot
+          viewBox="0 0 1200 620"
+          role="img"
+          aria-label="Mutation density across the reference chromosome"
+        ></svg>
+        <p class="mutation-plot-note">
+          Bar height is the percentage of all mutation records in each lineage group assigned to a 10-kb window.
+          Select a bar to inspect its annotations.
+        </p>
+      </div>
+
+      <aside class="mutation-detail-panel" data-mutation-details aria-live="polite">
+        Select a genomic window to inspect its mutation annotations.
+      </aside>
+    </div>
+  </section>
+
+  <section class="mutation-method-note">
+    <h2>Annotation scope</h2>
+    <p>
+      The source records were derived from <code>Mutations.txt</code> and matched to gene products in
+      <code>Gene.txt</code>. “Protein-changing” combines nonsynonymous and nonsense annotations;
+      “regulatory/flanking” combines upstream and downstream annotations. These categories describe
+      predicted sequence consequences and do not by themselves establish functional effects.
+    </p>
+    <a class="source-explore" href="{{ "sources/ab_china_dynamics/" | relURL }}">View lineage dynamics</a>
+  </section>
+</main>
+{{ end }}
+
+{{ define "styles" }}
+{{ with resources.Get "css/mutation-annotations.css" }}
+  {{ $mutationAnnotationsCSS := . | resources.Minify | resources.Fingerprint }}
+  <link rel="stylesheet" href="{{ $mutationAnnotationsCSS.RelPermalink | absURL }}">
+{{ end }}
+{{ end }}
+
+{{ define "scripts" }}
+{{ with resources.Get "js/mutation-annotations.js" }}
+  {{ $mutationAnnotationsJS := . | resources.Minify | resources.Fingerprint }}
+  <script src="{{ $mutationAnnotationsJS.RelPermalink | absURL }}" defer></script>
+{{ end }}
+{{ end }}
