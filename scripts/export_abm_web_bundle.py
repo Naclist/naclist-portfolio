@@ -55,9 +55,10 @@ def main() -> int:
     population = read(
         source / "population.parquet",
         [
-            "agent_id", "age", "sex", "occupation", "mobility",
+            "agent_id", "age", "sex", "occupation", "occupation_detail", "mobility",
             "household_id", "life_stage", "work_shift", "income",
-            "community_id", "home_id", "primary_location",
+            "community_id", "home_id", "primary_location", "healthcare_role",
+            "institution_type", "grade_id", "class_id",
         ],
     )
     nodes = read(source / "environment_nodes.parquet", ["id", "x", "y"])
@@ -137,6 +138,7 @@ def main() -> int:
             "age": population["age"].astype(int).tolist(),
             "sex": population["sex"].astype(int).tolist(),
             "occupation": population["occupation"].astype(int).tolist(),
+            "occupation_detail": population["occupation_detail"].astype(int).tolist(),
             "mobility": population["mobility"].astype(int).tolist(),
             "household": population["household_id"].astype(int).tolist(),
             "life_stage": population["life_stage"].astype(int).tolist(),
@@ -145,6 +147,11 @@ def main() -> int:
             "community": population["community_id"].astype(int).tolist(),
             "home": population["home_id"].astype(int).tolist(),
             "primary_location": population["primary_location"].astype(int).tolist(),
+            "primary_block": [location_block.get(int(location), -1) for location in population["primary_location"]],
+            "healthcare_role": population["healthcare_role"].astype(int).tolist(),
+            "institution_type": population["institution_type"].astype(int).tolist(),
+            "grade_id": population["grade_id"].astype(int).tolist(),
+            "class_id": population["class_id"].astype(int).tolist(),
         },
     }
     city_json = json.dumps(city, separators=(",", ":")).encode("utf-8")

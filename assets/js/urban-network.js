@@ -64,6 +64,10 @@
     const values = run && run.agent_metadata && run.agent_metadata[key];
     return values && id < values.length ? values[id] : fallback;
   }
+  function occupationValue(id) {
+    const detailed = metadataValue("occupation_detail", id, null);
+    return detailed === null || detailed === undefined ? metadataValue("occupation", id, 0) : detailed;
+  }
 
   function buildGraph(documentData) {
     if (!documentData || documentData.schema !== "synthetic-city-epidemic-run-v1") throw new Error("Unsupported run JSON schema");
@@ -123,7 +127,7 @@
     const scheme = ui["network-colour"].value;
     if (scheme === "state") return STATE_COLORS[node.state] || STATE_COLORS[0];
     if (scheme === "generation") return `hsl(${hashHue(node.generation)} 72% 58%)`;
-    if (scheme === "occupation") return `hsl(${hashHue(metadataValue("occupation", node.id, 0))} 62% 57%)`;
+    if (scheme === "occupation") return `hsl(${hashHue(occupationValue(node.id))} 62% 57%)`;
     if (scheme === "community") return `hsl(${hashHue(metadataValue("community", node.id, 0))} 66% 56%)`;
     const groupIndex = ["0–17", "18–34", "35–49", "50–64", "65+"].indexOf(ageGroup(metadataValue("age", node.id, 0)));
     return `hsl(${[202, 168, 48, 18, 295][groupIndex]} 67% 58%)`;
@@ -146,7 +150,7 @@
   }
   function forceNodeLabel(node) {
     const zh = language() === "zh";
-    const occupation = metadataValue("occupation", node.id, 0);
+    const occupation = occupationValue(node.id);
     return `Agent ${node.id}\n${zh ? "传播代" : "Generation"}: ${node.generation}\n${zh ? "职业" : "Occupation"}: ${(zh ? OCCUPATIONS_ZH : OCCUPATIONS)[occupation] || occupation}`;
   }
   function forceLinkHighlighted(link) {
@@ -330,7 +334,7 @@
     if (scheme === "state") return STATE.map((label, index) => [label, STATE_COLORS[index]]);
     if (scheme === "age") return ["0–17", "18–34", "35–49", "50–64", "65+"].map((label, index) => [label, `hsl(${[202,168,48,18,295][index]} 67% 58%)`]);
     if (scheme === "generation") return [...new Set(nodes.map((node) => node.generation))].sort((a,b)=>a-b).slice(0,16).map((value) => [`G${value}`, `hsl(${hashHue(value)} 72% 58%)`]);
-    if (scheme === "occupation") return [...new Set(nodes.map((node) => metadataValue("occupation", node.id, 0)))].sort((a,b)=>a-b).map((value) => [(language() === "zh" ? OCCUPATIONS_ZH : OCCUPATIONS)[value] || value, `hsl(${hashHue(value)} 62% 57%)`]);
+    if (scheme === "occupation") return [...new Set(nodes.map((node) => occupationValue(node.id)))].sort((a,b)=>a-b).map((value) => [(language() === "zh" ? OCCUPATIONS_ZH : OCCUPATIONS)[value] || value, `hsl(${hashHue(value)} 62% 57%)`]);
     return [...new Set(nodes.map((node) => metadataValue("community", node.id, 0)))].sort((a,b)=>a-b).slice(0,16).map((value) => [`C${value}`, `hsl(${hashHue(value)} 66% 56%)`]);
   }
   function drawLegend() { ui["network-legend"].innerHTML = legendEntries().map(([label,color]) => `<span><i style="background:${color}"></i>${label}</span>`).join(""); }
@@ -345,7 +349,7 @@
   function updateInspector() {
     const zh = language() === "zh";
     if (selectedNode) {
-      const node = selectedNode; const occupation = metadataValue("occupation", node.id, 0); const age = metadataValue("age", node.id, "—");
+      const node = selectedNode; const occupation = occupationValue(node.id); const age = metadataValue("age", node.id, "—");
       const inbound = edges.filter((edge) => edge.target === node.id); const outbound = edges.filter((edge) => edge.source === node.id).sort((a,b)=>a.earliest-b.earliest);
       ui["network-inspector-title"].textContent = `Agent ${node.id}`;
       const details = [[zh ? "状态" : "State", STATE[node.state]], [zh ? "传播代" : "Generation", node.generation], [zh ? "感染时间" : "Infected", formatTime(node.infectedAt)], [zh ? "感染来源" : "Source", node.source >= 0 ? `Agent ${node.source}` : (zh ? "初始种子" : "Seed case")], [zh ? "继发感染" : "Secondary cases", node.secondary], [zh ? "度" : "Degree", node.degree], [zh ? "年龄" : "Age", age], [zh ? "年龄组" : "Age group", ageGroup(Number(age))], [zh ? "职业" : "Occupation", (zh ? OCCUPATIONS_ZH : OCCUPATIONS)[occupation] || occupation], [zh ? "社区" : "Community", `#${metadataValue("community", node.id, "—")}`], [zh ? "家庭" : "Household", `#${metadataValue("household", node.id, "—")}`], [zh ? "交通方式" : "Mobility", (zh ? MOBILITY_ZH : MOBILITY)[metadataValue("mobility", node.id, 0)]], [zh ? "最早入边" : "Earliest inbound", inbound.length ? formatTime(Math.min(...inbound.map((edge)=>edge.earliest))) : "—"]];

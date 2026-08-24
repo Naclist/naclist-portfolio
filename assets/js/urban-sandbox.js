@@ -58,7 +58,7 @@
   let step = 0;
   let targetR0 = 1.5;
   let activeProfile = profiles.droplet;
-  let blockPopulation, blockS, blockE, blockI, blockR, blockExposedAt, blockLayer;
+  let blockPopulation, blockPresent, blockS, blockE, blockI, blockR, blockExposedAt, blockLayer;
   let agents = null;
   let curves = null;
   let layerTotals = new Float64Array(7);
@@ -225,6 +225,7 @@
     transmissions = [];
     generationTotals = new Uint32Array(32);
     blockPopulation = cityPopulation(populationSize);
+    blockPresent = new Int32Array(blockPopulation);
     blockS = new Int32Array(blockPopulation);
     blockE = new Int32Array(BLOCKS);
     blockI = new Int32Array(BLOCKS);
@@ -282,7 +283,7 @@
           const other = ny * COLS + nx;
           const distanceWeight = ox === 0 && oy === 0 ? activeProfile.local : (1 - activeProfile.local) / 8;
           total += blockI[other] * distanceWeight;
-          population += blockPopulation[other] * distanceWeight;
+          population += blockPresent[other] * distanceWeight;
         }
       }
     }
@@ -304,16 +305,103 @@
     return weights.length - 1;
   }
 
+  function blockFromPosition(position) {
+    const x = Math.max(0, Math.min(COLS - 1, Math.floor(position.x * COLS)));
+    const y = Math.max(0, Math.min(ROWS - 1, Math.floor(position.y * ROWS)));
+    return y * COLS + x;
+  }
+
+  function updateAgentBlocks() {
+    for (let agent = 0; agent < populationSize; agent += 1) {
+      agents.block[agent] = blockFromPosition(agentPosition(agent));
+    }
+  }
+
+  function rebuildBlockStateCounts() {
+    blockPresent.fill(0); blockS.fill(0); blockE.fill(0); blockI.fill(0); blockR.fill(0);
+    for (let agent = 0; agent < populationSize; agent += 1) {
+      const block = agents.block[agent];
+      const state = agents.state[agent];
+      blockPresent[block] += 1;
+      if (state === 0) blockS[block] += 1;
+      else if (state === 1) blockE[block] += 1;
+      else if (state === 2) blockI[block] += 1;
+      else blockR[block] += 1;
+    }
+  }
+
+  function chooseWeightedAvailableLayer(pools) {
+    const available = [];
+    let total = 0;
+    for (let layer = 0; layer < pools.length; layer += 1) {
+      if (!pools[layer].length) continue;
+      total += activeProfile.weights[layer];
+      available.push([layer, total]);
+    }
+    if (!available.length) return null;
+    const draw = rng() * total;
+    const layer = (available.find((entry) => draw <= entry[1]) || available[available.length - 1])[0];
+    const pool = pools[layer];
+    return { layer, source: pool[Math.floor(rng() * pool.length)] };
+  }
+
+  function semanticContactPools(target, candidates, excludeHousehold = false) {
+    const pools = Array.from({ length: 7 }, () => []);
+    const data = realCity && realCity.agents;
+    if (!data) {
+      candidates.forEach((source) => pools[6].push(source));
+      return pools;
+    }
+    const targetBlock = agents.block[target];
+    const targetHome = data.block[target];
+    const targetPrimary = data.primary_location[target];
+    const targetPrimaryBlock = data.primary_block ? data.primary_block[target] : -1;
+    const targetDetail = data.occupation_detail ? data.occupation_detail[target] : data.occupation[target];
+    for (const source of candidates) {
+      if (agents.block[source] !== targetBlock) continue;
+      const sameHousehold = data.household[source] === data.household[target];
+      const atSharedHome = targetBlock === targetHome && targetBlock === data.block[source];
+      if (sameHousehold && atSharedHome) {
+        if (!excludeHousehold) pools[0].push(source);
+        continue;
+      }
+      const sourceDetail = data.occupation_detail ? data.occupation_detail[source] : data.occupation[source];
+      const sharedPrimary = targetPrimary >= 0 && targetPrimary === data.primary_location[source];
+      const atPrimary = targetBlock === targetPrimaryBlock && targetBlock === (data.primary_block ? data.primary_block[source] : -2);
+      if ((targetDetail === 3 || sourceDetail === 3) && (atPrimary || targetBlock === (data.primary_block ? data.primary_block[targetDetail === 3 ? target : source] : -2))) {
+        pools[5].push(source); continue;
+      }
+      if (sharedPrimary && atPrimary && (targetDetail === 0 || targetDetail === 2 || sourceDetail === 0 || sourceDetail === 2)) {
+        pools[1].push(source); continue;
+      }
+      if (sharedPrimary && atPrimary) { pools[2].push(source); continue; }
+      const targetMoving = targetBlock !== targetHome && targetBlock !== targetPrimaryBlock;
+      const sourceMoving = targetBlock !== data.block[source] && targetBlock !== (data.primary_block ? data.primary_block[source] : -1);
+      if (data.mobility[target] === 1 && data.mobility[source] === 1 && targetMoving && sourceMoving) {
+        pools[4].push(source); continue;
+      }
+      if (data.community[target] === data.community[source]) { pools[3].push(source); continue; }
+      pools[6].push(source);
+    }
+    return pools;
+  }
+
   function advanceDemo() {
+    updateAgentBlocks();
+    rebuildBlockStateCounts();
     const pressure = new Float64Array(BLOCKS);
     const infectiousDays = 5;
     let infectiousTotal = 0;
     const infectiousByBlock = Array.from({ length: BLOCKS }, () => []);
-    const infectiousAgents = [];
+    const infectiousByHousehold = new Map();
     for (let agent = 0; agent < populationSize; agent += 1) {
       if (agents.state[agent] !== 2) continue;
       infectiousByBlock[agents.block[agent]].push(agent);
-      infectiousAgents.push(agent);
+      if (realCity && realCity.agents) {
+        const household = realCity.agents.household[agent];
+        if (!infectiousByHousehold.has(household)) infectiousByHousehold.set(household, []);
+        infectiousByHousehold.get(household).push(agent);
+      }
       infectiousTotal += 1;
     }
     const globalPrevalence = infectiousTotal / populationSize;
@@ -321,22 +409,31 @@
     let newInfections = 0;
     for (let agent = 0; agent < populationSize; agent += 1) {
       const state = agents.state[agent];
-      if (state === 0 && rng() < Math.min(.45, pressure[agents.block[agent]])) {
+      if (state === 0) {
         const block = agents.block[agent];
-        const candidates = [];
-        const blockX = block % COLS;
-        const blockY = Math.floor(block / COLS);
-        for (let oy = -1; oy <= 1; oy += 1) {
-          for (let ox = -1; ox <= 1; ox += 1) {
-            const x = blockX + ox;
-            const y = blockY + oy;
-            if (x >= 0 && x < COLS && y >= 0 && y < ROWS) candidates.push(...infectiousByBlock[y * COLS + x]);
-          }
+        const candidates = infectiousByBlock[block];
+        if (!candidates.length) continue;
+        let householdCandidates = [];
+        if (realCity && realCity.agents) {
+          householdCandidates = (infectiousByHousehold.get(realCity.agents.household[agent]) || []).filter((source) =>
+            agents.block[source] === block && block === realCity.agents.block[agent] && block === realCity.agents.block[source]
+          );
         }
-        const sourcePool = candidates.length ? candidates : infectiousAgents;
-        if (!sourcePool.length) continue;
-        const source = sourcePool[Math.floor(rng() * sourcePool.length)];
-        const layer = chooseLayer();
+        const baseHazard = pressure[block];
+        const householdHazard = householdCandidates.length
+          ? targetR0 / (infectiousDays * STEPS_PER_DAY) * activeProfile.weights[0] * .32 * Math.min(2, householdCandidates.length)
+          : 0;
+        const totalHazard = Math.min(.6, baseHazard + householdHazard);
+        if (rng() >= -Math.expm1(-totalHazard)) continue;
+        let contact = null;
+        if (householdCandidates.length && rng() < householdHazard / Math.max(totalHazard, Number.EPSILON)) {
+          contact = { layer: 0, source: householdCandidates[Math.floor(rng() * householdCandidates.length)] };
+        } else {
+          contact = chooseWeightedAvailableLayer(semanticContactPools(agent, candidates, true));
+          if (!contact && householdCandidates.length) contact = { layer: 0, source: householdCandidates[Math.floor(rng() * householdCandidates.length)] };
+        }
+        if (!contact) continue;
+        const { source, layer } = contact;
         agents.state[agent] = 1;
         agents.timer[agent] = Math.round((1.4 + rng() * 1.3) * STEPS_PER_DAY);
         agents.source[agent] = source;
@@ -358,15 +455,7 @@
         } else if (agents.timer[agent] === 0 && state === 2) agents.state[agent] = 3;
       }
     }
-    blockS.fill(0); blockE.fill(0); blockI.fill(0); blockR.fill(0);
-    for (let agent = 0; agent < populationSize; agent += 1) {
-      const block = agents.block[agent];
-      const state = agents.state[agent];
-      if (state === 0) blockS[block] += 1;
-      else if (state === 1) blockE[block] += 1;
-      else if (state === 2) blockI[block] += 1;
-      else blockR[block] += 1;
-    }
+    rebuildBlockStateCounts();
     cumulativeInfections += newInfections;
     return newInfections;
   }
@@ -512,7 +601,7 @@
       [zh ? "继发感染" : "Secondary cases", agents.secondary[selectedAgent]],
       [zh ? "年龄" : "Age", data ? data.age[selectedAgent] : "—"],
       [zh ? "性别" : "Sex", data ? (data.sex[selectedAgent] === 0 ? (zh ? "女" : "Female") : (zh ? "男" : "Male")) : "—"],
-      [zh ? "职业" : "Occupation", data ? (zh ? OCCUPATIONS_ZH : OCCUPATIONS)[data.occupation[selectedAgent]] : "—"],
+      [zh ? "职业" : "Occupation", data ? (zh ? OCCUPATIONS_ZH : OCCUPATIONS)[data.occupation_detail ? data.occupation_detail[selectedAgent] : data.occupation[selectedAgent]] : "—"],
       [zh ? "生命阶段" : "Life stage", data ? (zh ? LIFE_STAGES_ZH : LIFE_STAGES)[data.life_stage[selectedAgent]] : "—"],
       [zh ? "交通方式" : "Mobility", data ? (zh ? MOBILITY_ZH : MOBILITY)[data.mobility[selectedAgent]] : "—"],
       [zh ? "班次" : "Work shift", data ? (zh ? SHIFTS_ZH : SHIFTS)[data.work_shift[selectedAgent]] : "—"],
@@ -888,13 +977,12 @@
     agents.infectedAt.set(documentData.agent_state.infected_at);
     agents.secondary.set(documentData.agent_state.secondary);
     if (documentData.agent_state.timer) agents.timer.set(documentData.agent_state.timer);
-    blockS.fill(0); blockE.fill(0); blockI.fill(0); blockR.fill(0);
+    updateAgentBlocks();
+    rebuildBlockStateCounts();
     cumulativeInfections = 0;
     for (let agent = 0; agent < populationSize; agent += 1) {
-      const block = agents.block[agent];
       const state = agents.state[agent];
-      if (state === 0) blockS[block] += 1;
-      else { cumulativeInfections += 1; if (state === 1) blockE[block] += 1; else if (state === 2) blockI[block] += 1; else blockR[block] += 1; }
+      if (state !== 0) cumulativeInfections += 1;
     }
     ui["timeline-range"].value = step;
     ui["run-data-status"].textContent = currentLanguage() === "zh" ? "已载入本地 run JSON" : "Local run JSON loaded";
