@@ -6,7 +6,7 @@
 {{ end }}
 
 {{ define "main" }}
-<main class="urban-page sandbox-page" data-urban-page data-sandbox-root data-bundle-url="{{ "/urban-sandbox/" | relURL }}">
+<main class="urban-page sandbox-page" data-urban-page data-sandbox-root data-bundle-url="{{ "/urban-sandbox/" | relURL }}" data-run-api="https://pladb.naclist.site/synthetic-city-api/">
   <nav class="urban-pagebar sandbox-pagebar">
     <a class="urban-wordmark" href="{{ "/ambitions/" | relURL }}">SYNTHETIC CITY LAB</a>
     <div class="urban-pagebar-actions">
@@ -31,13 +31,6 @@
   </header>
 
   <section class="sandbox-controls" aria-label="Simulation controls">
-    <div class="control-group mode-control">
-      <label data-i18n="population-mode">Population mode</label>
-      <div class="segmented-control" id="mode-control">
-        <button type="button" class="active" data-mode="demo"><span>10K</span><small>DEMO</small></button>
-        <button type="button" data-mode="research"><span>100K</span><small>RESEARCH</small></button>
-      </div>
-    </div>
     <div class="control-group profile-control">
       <label for="profile-select" data-i18n="transmission-profile">Transmission profile</label>
       <select id="profile-select">
@@ -58,11 +51,15 @@
     <button class="restart-button" id="restart-button" type="button"><span>↻</span><b data-i18n="apply-restart">Apply & Restart</b></button>
   </section>
 
-  <div class="research-notice" id="research-notice" hidden>
-    <b data-i18n="research-preview-title">100K research preview</b>
-    <span data-i18n="research-preview-copy">GitHub Pages renders block aggregates locally. Full 100K contact-driven execution connects to the Python service when deployed.</span>
-    <span class="service-pill" id="service-status">API: OFFLINE</span>
-  </div>
+  <section class="run-data-bar" aria-label="Run data controls">
+    <strong data-i18n="run-data">RUN DATA</strong>
+    <label for="run-upload" class="run-data-button"><span>↑</span><b data-i18n="upload-run">Upload run JSON</b></label>
+    <input id="run-upload" type="file" accept="application/json,.json" hidden>
+    <button id="download-run" class="run-data-button" type="button"><span>↓</span><b data-i18n="download-run">Download current run</b></button>
+    <button id="publish-run" class="run-data-button" type="button" disabled><span>☁</span><b data-i18n="publish-run">Share for 24 hours</b></button>
+    <a class="run-data-button accent" href="{{ "/ambitions/network/" | relURL }}"><span>⌘</span><b data-i18n="open-network">Transmission Network</b></a>
+    <span id="run-data-status" data-i18n="run-data-ready">Local run · not uploaded</span>
+  </section>
 
   <section class="sandbox-workspace">
     <div class="map-panel panel">
@@ -78,6 +75,18 @@
       </div>
       <div class="canvas-wrap">
         <canvas id="city-canvas" aria-label="Synthetic city epidemic map"></canvas>
+        <div class="map-navigation" aria-label="Map navigation">
+          <button id="zoom-in" type="button" title="Zoom in">+</button>
+          <button id="zoom-out" type="button" title="Zoom out">−</button>
+          <button id="zoom-reset" type="button" title="Reset map">⌂</button>
+        </div>
+        <div class="map-help" data-i18n="map-help">Scroll to zoom · drag to pan · click an Agent</div>
+        <aside class="agent-inspector" id="agent-inspector" hidden>
+          <button id="agent-inspector-close" type="button" aria-label="Close">×</button>
+          <span>AGENT INSPECTOR</span>
+          <h3 id="agent-inspector-title">Agent</h3>
+          <div id="agent-inspector-content"></div>
+        </aside>
         <div class="map-legend" id="spatial-legend" aria-live="polite">
           <span><i style="--legend-color:#18352e"></i>Residential</span>
           <span><i style="--legend-color:#3f3430"></i>Commercial</span>
@@ -122,6 +131,14 @@
       <div class="panel-heading"><div><span class="panel-eyebrow">REALIZED EVENTS</span><h2 data-i18n="layer-contribution">Contact-layer contribution</h2></div></div>
       <div class="layer-bars" id="layer-bars"></div>
     </div>
+    <div class="generation-panel panel">
+      <div class="panel-heading"><div><span class="panel-eyebrow">OUTBREAK SHAPE</span><h2 data-i18n="generation-panel">Infections by generation</h2></div></div>
+      <canvas id="generation-canvas" aria-label="Infections by transmission generation"></canvas>
+    </div>
+    <div class="tree-panel panel">
+      <div class="panel-heading"><div><span class="panel-eyebrow">REALIZED TRANSMISSION</span><h2 data-i18n="tree-panel">Transmission tree</h2></div><small data-i18n="tree-help">Click a node to select the Agent</small></div>
+      <canvas id="tree-canvas" aria-label="Incremental transmission tree"></canvas>
+    </div>
   </section>
 
   <section class="playback-bar">
@@ -129,8 +146,9 @@
     <button id="play-button" class="play" type="button" title="Play / pause">▶</button>
     <button id="step-button" type="button" title="Step">▶│</button>
     <span class="timeline-day">D01</span>
-    <input id="timeline-range" type="range" min="0" max="1343" value="0">
+    <input id="timeline-range" type="range" min="0" max="1343" step="1" value="0" aria-label="15-minute simulation timestep">
     <span class="timeline-day">D14</span>
+    <span class="timeline-resolution" data-i18n="timeline-resolution">15 MIN / STEP</span>
     <select id="speed-select" aria-label="Playback speed"><option value="1">1×</option><option value="4" selected>4×</option><option value="12">12×</option></select>
   </section>
 

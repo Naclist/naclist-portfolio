@@ -1,0 +1,60 @@
+{{ define "styles" }}
+  {{ with resources.Get "css/urban-sandbox.css" }}{{ $style := . | resources.Minify | resources.Fingerprint }}<link rel="stylesheet" href="{{ $style.RelPermalink | absURL }}">{{ end }}
+  {{ with resources.Get "css/urban-network.css" }}{{ $style := . | resources.Minify | resources.Fingerprint }}<link rel="stylesheet" href="{{ $style.RelPermalink | absURL }}">{{ end }}
+{{ end }}
+
+{{ define "main" }}
+<main class="urban-page network-page" data-urban-page data-network-root data-run-api="https://pladb.naclist.site/synthetic-city-api/">
+  <nav class="urban-pagebar sandbox-pagebar">
+    <a class="urban-wordmark" href="{{ "/ambitions/" | relURL }}">SYNTHETIC CITY LAB</a>
+    <div class="urban-pagebar-actions">
+      <a class="text-link" href="{{ "/ambitions/sandbox/" | relURL }}" data-i18n="open-sandbox">Open sandbox ↗</a>
+      <a class="text-link" href="{{ "/ambitions/documentation/" | relURL }}" data-i18n="documentation">Documentation</a>
+      <div class="lang-switch" role="group" aria-label="Language"><button type="button" data-lang-button="en" class="active">EN</button><button type="button" data-lang-button="zh">中文</button></div>
+    </div>
+  </nav>
+
+  <header class="network-header">
+    <div><span>REALIZED TRANSMISSION ANALYSIS</span><h1 data-i18n="network-title">Transmission Network</h1><p data-i18n="network-lede">Inspect who infected whom, when the connection first appeared, and how network structure changes under different node encodings.</p></div>
+    <label class="network-upload" for="network-run-upload"><b>↑</b><span data-i18n="upload-run">Upload run JSON</span></label>
+    <input id="network-run-upload" type="file" accept="application/json,.json" hidden>
+  </header>
+
+  <section class="network-controls">
+    <label><span data-i18n="colour-by">Colour nodes by</span><select id="network-colour"><option value="generation">Generation</option><option value="occupation">Occupation</option><option value="age">Age group</option><option value="community">Community</option><option value="state">Disease state</option></select></label>
+    <label><span data-i18n="size-by">Node size</span><select id="network-size"><option value="secondary">Secondary infections</option><option value="degree">Degree</option><option value="fixed">Uniform</option></select></label>
+    <label><span data-i18n="filter-layer">Contact layer</span><select id="network-layer"><option value="all">All realized layers</option><option value="0">Household</option><option value="1">School</option><option value="2">Workplace</option><option value="3">Community</option><option value="4">Transport</option><option value="5">Healthcare</option><option value="6">Transient</option></select></label>
+    <label><span data-i18n="find-agent">Find Agent</span><input id="network-search" type="number" min="0" max="9999" placeholder="Agent ID"></label>
+    <button id="network-find" type="button" data-i18n="select-agent">Select Agent</button>
+    <button id="network-reset-view" type="button" data-i18n="reset-view">Reset view</button>
+  </section>
+
+  <section class="network-summary">
+    <div><span data-i18n="infected-nodes">Infected nodes</span><strong id="network-node-count">—</strong></div>
+    <div><span data-i18n="transmission-edges">Transmission edges</span><strong id="network-edge-count">—</strong></div>
+    <div><span data-i18n="generations">Generations</span><strong id="network-generation-count">—</strong></div>
+    <div><span data-i18n="earliest-event">Earliest event</span><strong id="network-earliest">—</strong></div>
+    <div><span data-i18n="latest-event">Latest event</span><strong id="network-latest">—</strong></div>
+  </section>
+
+  <section class="network-workspace">
+    <div class="network-canvas-wrap">
+      <canvas id="network-canvas" aria-label="Interactive transmission network"></canvas>
+      <div class="network-empty" id="network-empty"><b data-i18n="network-empty-title">No run loaded</b><span data-i18n="network-empty-copy">Upload a JSON exported from the Sandbox, or open a 24-hour shared link.</span></div>
+      <div class="network-map-help" data-i18n="network-help">Scroll to zoom · drag to pan · click nodes or edges</div>
+      <div class="network-legend" id="network-legend"></div>
+    </div>
+    <aside class="network-inspector">
+      <span>SELECTION</span><h2 id="network-inspector-title" data-i18n="nothing-selected">Nothing selected</h2>
+      <div id="network-inspector-content"><p data-i18n="inspector-prompt">Select a node to inspect its Agent identity and transmission history. Select an edge to inspect its earliest event.</p></div>
+    </aside>
+  </section>
+
+  <footer class="network-footer"><span id="network-status" data-i18n="network-local">Local analysis · JSON remains in your browser</span><button id="network-download" type="button" disabled data-i18n="download-run">Download current run</button></footer>
+</main>
+{{ end }}
+
+{{ define "scripts" }}
+  {{ with resources.Get "js/urban-common.js" }}{{ $script := . | resources.Minify | resources.Fingerprint }}<script src="{{ $script.RelPermalink | absURL }}" defer></script>{{ end }}
+  {{ with resources.Get "js/urban-network.js" }}{{ $script := . | resources.Minify | resources.Fingerprint }}<script src="{{ $script.RelPermalink | absURL }}" defer></script>{{ end }}
+{{ end }}

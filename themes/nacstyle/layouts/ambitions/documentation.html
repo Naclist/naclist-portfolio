@@ -47,12 +47,12 @@
         <div class="section-number">01</div>
         <div class="lang-panel" data-lang="en">
           <h2>What this project is</h2>
-          <p>The framework generates an equilibrated synthetic city and 10,000–100,000 synthetic residents. Every resident has a household, demographic identity, activity schedule, workplace or school, road-constrained mobility and time-stamped contacts.</p>
+          <p>The public framework presents one equilibrated synthetic city with 10,000 synthetic residents. Every resident has a household, demographic identity, activity schedule, workplace or school, road-constrained mobility and time-stamped contacts.</p>
           <p>The epidemic layer is deliberately downstream. It does not rebuild the city when Target R0 changes; it discards only disease state and replays transmission over the same society.</p>
         </div>
         <div class="lang-panel" data-lang="zh" hidden>
           <h2>这是什么项目</h2>
-          <p>该框架生成一座达到数值均衡的合成城市，以及 10,000–100,000 名合成居民。每个人都有家庭、人口学身份、活动日程、工作地或学校、沿道路移动的轨迹和带时间戳的接触。</p>
+          <p>公开框架展示一座达到数值均衡的合成城市和 10,000 名合成居民。每个人都有家庭、人口学身份、活动日程、工作地或学校、沿道路移动的轨迹和带时间戳的接触。</p>
           <p>疫情层位于整个因果链下游。改变 Target R0 时不会重建城市，只会清空疾病状态，并在同一社会结构上重新播放传播过程。</p>
         </div>
         <div class="doc-callout"><b>ILLUSTRATIVE</b><span data-i18n="not-pathogen">No profile is calibrated to a named pathogen.</span></div>
@@ -83,11 +83,10 @@
 
       <section id="modes" class="doc-section">
         <div class="section-number">03</div>
-        <div class="lang-panel" data-lang="en"><h2>Two operating modes</h2></div>
-        <div class="lang-panel" data-lang="zh" hidden><h2>两套运行模式</h2></div>
+        <div class="lang-panel" data-lang="en"><h2>Public model scale</h2></div>
+        <div class="lang-panel" data-lang="zh" hidden><h2>公开模型规模</h2></div>
         <div class="mode-comparison">
-          <div><span class="mode-badge demo">DEMO</span><strong>10,000 agents</strong><p data-i18n="mode-demo-copy">Individual points, live movement and rapid parameter comparison. Designed for explanation and development.</p></div>
-          <div><span class="mode-badge research">RESEARCH</span><strong>100,000 agents</strong><p data-i18n="mode-research-copy">Block-level and density rendering. Full contact-driven runs require the Python simulation service.</p></div>
+          <div><span class="mode-badge demo">PUBLIC MODEL</span><strong>10,000 agents</strong><p data-i18n="mode-demo-copy">Individual points, live movement and rapid parameter comparison. Designed for explanation and network analysis.</p></div>
         </div>
       </section>
 
@@ -113,12 +112,14 @@
         <div class="lang-panel" data-lang="en"><h2>How to operate the sandbox</h2></div>
         <div class="lang-panel" data-lang="zh" hidden><h2>如何操作沙盒</h2></div>
         <ol class="operation-list">
-          <li><b>1</b><span data-i18n="op-one">Choose 10K Demo or 100K Research mode.</span></li>
+          <li><b>1</b><span data-i18n="op-one">Load the fixed 10K city and Agent substrate.</span></li>
           <li><b>2</b><span data-i18n="op-two">Choose one generic transmission mechanism.</span></li>
           <li><b>3</b><span data-i18n="op-three">Set Target R0 and initial seed count.</span></li>
           <li><b>4</b><span data-i18n="op-four">Press Apply & Restart. Changing R0 alone never regenerates the city.</span></li>
           <li><b>5</b><span data-i18n="op-five">Use Play, Pause, step and timeline controls to inspect spread.</span></li>
           <li><b>6</b><span data-i18n="op-six">Compare Target R0, Expected network R0, Realized R and current Rt separately.</span></li>
+          <li><b>7</b><span data-i18n="op-seven">Download the current run JSON or upload an earlier 10K run.</span></li>
+          <li><b>8</b><span data-i18n="op-eight">Open Transmission Network to inspect Agents, earliest edge times and alternative colour schemes.</span></li>
         </ol>
       </section>
 
@@ -136,12 +137,12 @@
 
       <section id="deployment" class="doc-section">
         <div class="section-number">07</div>
-        <div class="lang-panel" data-lang="en"><h2>Website deployment boundary</h2><p>GitHub Pages serves the bilingual interface, the authentic compact city substrate and deterministic 10K browser execution. Heavy temporal contacts are intentionally excluded from the download. The 100K full sandbox is designed to call a separately deployed FastAPI worker that keeps those contacts in memory and streams aggregate deltas to the browser.</p></div>
-        <div class="lang-panel" data-lang="zh" hidden><h2>网页部署边界</h2><p>GitHub Pages 承载双语界面、真实压缩城市底层数据和确定性的 10K 浏览器计算。体量巨大的时序接触事件不会下载到客户端。100K 全量沙盒被设计为调用独立部署的 FastAPI worker：服务端常驻这些接触数据，向浏览器流式发送聚合变化。</p></div>
+        <div class="lang-panel" data-lang="en"><h2>Website deployment boundary</h2><p>GitHub Pages serves the bilingual interface, the authentic compact 10K city substrate and deterministic browser execution. The small backend stores uploaded run JSON files for up to 24 hours; it is not presented as a large-scale simulation service.</p></div>
+        <div class="lang-panel" data-lang="zh" hidden><h2>网页部署边界</h2><p>GitHub Pages 承载双语界面、真实压缩的 10K 城市底层数据和确定性的浏览器计算。轻量后端只负责把上传的 run JSON 暂存最多 24 小时，不作为大规模模拟服务展示。</p></div>
         <pre class="deployment-diagram"><code>GitHub Pages UI
       │ WebSocket / HTTPS
       ▼
-FastAPI job service ── fixed 100K substrate
+FastAPI run store ── 24-hour JSON retention
       │
       └── incremental SEIR · blocks · tree · layers</code></pre>
       </section>

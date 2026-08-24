@@ -54,7 +54,11 @@ def main() -> int:
     )
     population = read(
         source / "population.parquet",
-        ["agent_id", "home_id", "mobility", "community_id"],
+        [
+            "agent_id", "age", "sex", "occupation", "mobility",
+            "household_id", "life_stage", "work_shift", "income",
+            "community_id", "home_id", "primary_location",
+        ],
     )
     nodes = read(source / "environment_nodes.parquet", ["id", "x", "y"])
     facilities = read(
@@ -130,8 +134,17 @@ def main() -> int:
         ],
         "agents": {
             "block": [location_block.get(int(home), -1) for home in population["home_id"]],
+            "age": population["age"].astype(int).tolist(),
+            "sex": population["sex"].astype(int).tolist(),
+            "occupation": population["occupation"].astype(int).tolist(),
             "mobility": population["mobility"].astype(int).tolist(),
+            "household": population["household_id"].astype(int).tolist(),
+            "life_stage": population["life_stage"].astype(int).tolist(),
+            "work_shift": population["work_shift"].astype(int).tolist(),
+            "income": np.rint(population["income"]).astype(int).tolist(),
             "community": population["community_id"].astype(int).tolist(),
+            "home": population["home_id"].astype(int).tolist(),
+            "primary_location": population["primary_location"].astype(int).tolist(),
         },
     }
     city_json = json.dumps(city, separators=(",", ":")).encode("utf-8")

@@ -5,7 +5,7 @@
     zh: {
       "fixed-substrate": "固定城市基底",
       "demo-agents": "演示 Agent",
-      "research-agents": "研究 Agent",
+      "road-segments": "道路路段",
       "time-resolution": "时间分辨率",
       "contact-layers": "接触语义层",
       "boundary-copy": "示意性计算流行病学实验，不是预测、临床工具，也不对应经过校准的具体病原体。",
@@ -13,7 +13,7 @@
       "on-page": "本页目录",
       "toc-overview": "项目概览",
       "toc-architecture": "实现架构",
-      "toc-modes": "两套模式",
+      "toc-modes": "模型规模",
       "toc-profiles": "传播机制",
       "toc-controls": "操作方式",
       "toc-reading": "结果解读",
@@ -25,19 +25,20 @@
       "arch-contact": "时序接触",
       "arch-dynamics": "疾病动力学",
       "mode-demo-copy": "显示个体、实时移动并快速比较参数，用于讲解与开发。",
-      "mode-research-copy": "采用 block 与密度聚合渲染；完整接触驱动计算需要 Python 服务。",
       "droplet-name": "近距离呼吸道传播",
       "droplet-copy": "家庭、学校与工作场所中的重复近距离接触占主导。",
       "airborne-name": "共享空气传播",
       "airborne-copy": "拥挤室内、社区和交通混合获得更高权重。",
       "contact-name": "接触媒介传播",
       "contact-copy": "持续性的近距离环境比短暂混合更加重要。",
-      "op-one": "选择 10K Demo 或 100K Research 模式。",
+      "op-one": "加载固定的 10K 城市与 Agent 基底。",
       "op-two": "选择一种通用传播机制。",
       "op-three": "设置 Target R0 与初始病例数量。",
       "op-four": "点击应用并重启。仅改变 R0 不会重新生成城市。",
       "op-five": "使用播放、暂停、单步与时间轴检查传播。",
       "op-six": "分别比较 Target R0、Expected network R0、Realized R 和当前 Rt。",
+      "op-seven": "下载当前 run JSON，或上传先前保存的 10K run。",
+      "op-eight": "进入传播网络页面，检查 Agent、边的最早时间和不同着色方案。",
       "gloss-target": "用户要求的实验传播强度",
       "gloss-expected": "在当前接触基底上的校准期望",
       "gloss-realized": "已完成病例实际产生的继发病例",
@@ -46,19 +47,27 @@
       "browser-preview": "浏览器预览",
       "sandbox-title": "同一座城市，不同的传播动力学。",
       "simulation-time": "模拟时间",
-      "population-mode": "人口模式",
       "transmission-profile": "传播机制",
       "target-r0": "目标 R0",
       "initial-seeds": "初始病例",
       "apply-restart": "应用并重启",
-      "research-preview-title": "100K 研究预览",
-      "research-preview-copy": "GitHub Pages 在本地渲染 block 聚合；部署 Python 服务后才能执行完整 100K 接触驱动模拟。",
       "city-state": "城市状态",
       "layer-urban": "城市构成",
       "layer-transit": "公共交通",
       "layer-state": "疾病状态",
       "layer-density": "感染密度",
       "layer-flow": "道路流量",
+      "map-help": "滚轮缩放 · 拖动平移 · 点击 Agent",
+      "timeline-resolution": "每步 15 分钟",
+      "run-data": "RUN 数据",
+      "upload-run": "上传 run JSON",
+      "download-run": "下载当前 run",
+      "publish-run": "分享 24 小时",
+      "open-network": "传播网络",
+      "run-data-ready": "本地 run · 尚未上传",
+      "generation-panel": "各传播代感染数",
+      "tree-panel": "传播树",
+      "tree-help": "点击节点选择对应 Agent",
       "epidemic-summary": "疫情摘要",
       "susceptible": "易感",
       "exposed": "暴露",
@@ -75,6 +84,25 @@
       "epidemic-curve": "疫情曲线",
       "layer-contribution": "接触图层实际贡献",
       "sandbox-boundary": "浏览器预览保留界面与定性 regime；科研结论需要服务端接触模拟和随机重复实验。"
+      ,"network-lede": "检查谁感染了谁、连接最早何时出现，以及不同节点编码如何改变网络结构的可读性。"
+      ,"network-title": "传播网络"
+      ,"colour-by": "节点着色依据"
+      ,"size-by": "节点大小"
+      ,"filter-layer": "接触层"
+      ,"find-agent": "查找 Agent"
+      ,"select-agent": "选择 Agent"
+      ,"reset-view": "重置视图"
+      ,"infected-nodes": "感染节点"
+      ,"transmission-edges": "传播边"
+      ,"generations": "传播代数"
+      ,"earliest-event": "最早事件"
+      ,"latest-event": "最晚事件"
+      ,"network-empty-title": "尚未加载 run"
+      ,"network-empty-copy": "上传沙盒导出的 JSON，或打开一个 24 小时共享链接。"
+      ,"network-help": "滚轮缩放 · 拖动平移 · 点击节点或边"
+      ,"nothing-selected": "尚未选择"
+      ,"inspector-prompt": "点击节点查看 Agent 身份和传播历史；点击边查看最早事件。"
+      ,"network-local": "本地分析 · JSON 保留在浏览器中"
     }
   };
 

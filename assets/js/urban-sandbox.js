@@ -6,11 +6,20 @@
 
   const STEPS_PER_DAY = 96;
   const TOTAL_STEPS = 14 * STEPS_PER_DAY;
+  const BASE_PLAYBACK_MS = 240;
   const COLS = 20;
   const ROWS = 20;
   const BLOCKS = COLS * ROWS;
   const LAYERS = ["Household", "School", "Workplace", "Community", "Transport", "Healthcare", "Transient"];
   const LAYERS_ZH = ["家庭", "学校", "工作场所", "社区", "交通", "医疗", "短暂接触"];
+  const OCCUPATIONS = ["student", "office/professional", "education", "healthcare", "retail/service", "manufacturing", "logistics/transport", "construction", "public administration", "hospitality", "unemployed", "retired"];
+  const OCCUPATIONS_ZH = ["学生", "办公室/专业人员", "教育", "医疗", "零售/服务", "制造业", "物流/交通", "建筑", "公共管理", "餐旅服务", "未就业", "退休"];
+  const MOBILITY = ["walk", "public transport", "private vehicle"];
+  const MOBILITY_ZH = ["步行", "公共交通", "私家车"];
+  const LIFE_STAGES = ["infant/toddler", "preschool", "primary student", "lower secondary", "upper secondary", "tertiary/worker", "working age", "retired/older"];
+  const LIFE_STAGES_ZH = ["婴幼儿", "学龄前", "小学生", "初中生", "高中生", "大学生/工作者", "工作年龄", "退休/老年"];
+  const SHIFTS = ["day", "evening", "night", "rotating"];
+  const SHIFTS_ZH = ["日班", "晚班", "夜班", "轮班"];
   const profiles = {
     droplet: {
       name: { en: "Close-range respiratory", zh: "近距离呼吸道传播" },
@@ -30,16 +39,17 @@
   };
 
   const ui = Object.fromEntries([
-    "city-canvas", "curve-canvas", "profile-select", "r0-range", "r0-value",
-    "seed-count", "restart-button", "research-notice", "service-status",
+    "city-canvas", "curve-canvas", "generation-canvas", "tree-canvas", "profile-select", "r0-range", "r0-value",
+    "seed-count", "restart-button",
     "clock-day", "clock-time", "metric-s", "metric-e", "metric-i", "metric-r",
     "metric-expected", "metric-realized", "metric-rt", "metric-blocks",
     "metric-communities", "profile-name", "profile-description", "profile-weights",
     "layer-bars", "timeline-range", "reset-button", "play-button", "step-button",
-    "speed-select", "spatial-legend"
+    "speed-select", "spatial-legend", "zoom-in", "zoom-out", "zoom-reset",
+    "agent-inspector", "agent-inspector-close", "agent-inspector-title",
+    "agent-inspector-content", "run-upload", "download-run", "publish-run", "run-data-status"
   ].map((id) => [id, document.getElementById(id)]));
 
-  let mode = "demo";
   let populationSize = 10000;
   let selectedLayer = "urban";
   let running = false;
@@ -54,8 +64,14 @@
   let layerTotals = new Float64Array(7);
   let cumulativeInfections = 0;
   let initialSeeds = 5;
+  let transmissions = [];
+  let generationTotals = new Uint32Array(32);
+  let treeHitAreas = [];
   let realCity = null;
   let realMobility = null;
+  let selectedAgent = -1;
+  const viewport = { scale: 1, x: 0, y: 0 };
+  let pointerGesture = null;
 
   function mulberry32(seed) {
     return function random() {
@@ -103,7 +119,10 @@
       throw new Error("Population and mobility bundle disagree");
     }
     const status = document.querySelector(".sandbox-pagebar .live-dot span");
-    if (status) status.textContent = currentLanguage() === "zh" ? "真实 10K 数据已加载" : "REAL 10K DATA LOADED";
+    if (status) {
+      status.removeAttribute("data-i18n");
+      status.textContent = currentLanguage() === "zh" ? "真实 10K 数据已加载" : "REAL 10K DATA LOADED";
+    }
   }
 
   function poisson(lambda) {
@@ -168,6 +187,13 @@
     const block = new Uint16Array(total);
     const state = new Uint8Array(total);
     const timer = new Uint16Array(total);
+    const generation = new Int16Array(total);
+    generation.fill(-1);
+    const source = new Int32Array(total);
+    source.fill(-1);
+    const infectedAt = new Int16Array(total);
+    infectedAt.fill(-1);
+    const secondary = new Uint16Array(total);
     let agent = 0;
     for (let b = 0; b < BLOCKS && agent < total; b += 1) {
       const bx = b % COLS;
@@ -181,19 +207,23 @@
         block[agent] = b;
       }
     }
-    return { homeX, homeY, workX, workY, block, state, timer };
+    return { homeX, homeY, workX, workY, block, state, timer, generation, source, infectedAt, secondary };
   }
 
   function restart() {
     running = false;
+    window.clearTimeout(timer);
+    timer = null;
     ui["play-button"].textContent = "▶";
     targetR0 = Number(ui["r0-range"].value);
     initialSeeds = Math.max(1, Number(ui["seed-count"].value) || 5);
     activeProfile = profiles[ui["profile-select"].value];
-    populationSize = mode === "demo" ? 10000 : 100000;
-    rng = mulberry32(20260824 + Math.round(targetR0 * 100) + initialSeeds * 17 + (mode === "research" ? 999 : 0) + Object.keys(profiles).indexOf(ui["profile-select"].value) * 111);
+    populationSize = 10000;
+    rng = mulberry32(20260824 + Math.round(targetR0 * 100) + initialSeeds * 17 + Object.keys(profiles).indexOf(ui["profile-select"].value) * 111);
     step = 0;
     layerTotals = new Float64Array(7);
+    transmissions = [];
+    generationTotals = new Uint32Array(32);
     blockPopulation = cityPopulation(populationSize);
     blockS = new Int32Array(blockPopulation);
     blockE = new Int32Array(BLOCKS);
@@ -216,20 +246,22 @@
       }
     }
     const actualSeeds = Math.min(initialSeeds, blockS[seedBlock]);
+    generationTotals[0] = actualSeeds;
     blockS[seedBlock] -= actualSeeds;
     blockE[seedBlock] += actualSeeds;
-    if (mode === "demo") {
-      agents = createAgents(populationSize);
-      if (realCity && realCity.agents && realCity.agents.block.length === populationSize) {
-        agents.block.set(realCity.agents.block.map((value) => Math.max(0, value)));
+    agents = createAgents(populationSize);
+    if (realCity && realCity.agents && realCity.agents.block.length === populationSize) {
+      agents.block.set(realCity.agents.block.map((value) => Math.max(0, value)));
+    }
+    let seeded = 0;
+    for (let a = 0; a < populationSize && seeded < actualSeeds; a += 1) {
+      if (agents.block[a] === seedBlock) {
+        agents.state[a] = 1;
+        agents.timer[a] = 2 * STEPS_PER_DAY + Math.floor(rng() * 24);
+        agents.generation[a] = 0;
+        agents.infectedAt[a] = 0;
+        seeded += 1;
       }
-      let seeded = 0;
-      for (let a = 0; a < populationSize && seeded < actualSeeds; a += 1) {
-        if (agents.block[a] === seedBlock) { agents.state[a] = 1; agents.timer[a] = 2 * STEPS_PER_DAY + Math.floor(rng() * 24); seeded += 1; }
-      }
-    } else {
-      agents = null;
-      blockExposedAt[seedBlock] = actualSeeds * 2 * STEPS_PER_DAY;
     }
     recordCurve(actualSeeds);
     ui["timeline-range"].value = 0;
@@ -276,17 +308,47 @@
     const pressure = new Float64Array(BLOCKS);
     const infectiousDays = 5;
     let infectiousTotal = 0;
-    for (let block = 0; block < BLOCKS; block += 1) infectiousTotal += blockI[block];
+    const infectiousByBlock = Array.from({ length: BLOCKS }, () => []);
+    const infectiousAgents = [];
+    for (let agent = 0; agent < populationSize; agent += 1) {
+      if (agents.state[agent] !== 2) continue;
+      infectiousByBlock[agents.block[agent]].push(agent);
+      infectiousAgents.push(agent);
+      infectiousTotal += 1;
+    }
     const globalPrevalence = infectiousTotal / populationSize;
     for (let block = 0; block < BLOCKS; block += 1) pressure[block] = targetR0 / (infectiousDays * STEPS_PER_DAY) * neighborInfectious(block, globalPrevalence);
     let newInfections = 0;
     for (let agent = 0; agent < populationSize; agent += 1) {
       const state = agents.state[agent];
       if (state === 0 && rng() < Math.min(.45, pressure[agents.block[agent]])) {
+        const block = agents.block[agent];
+        const candidates = [];
+        const blockX = block % COLS;
+        const blockY = Math.floor(block / COLS);
+        for (let oy = -1; oy <= 1; oy += 1) {
+          for (let ox = -1; ox <= 1; ox += 1) {
+            const x = blockX + ox;
+            const y = blockY + oy;
+            if (x >= 0 && x < COLS && y >= 0 && y < ROWS) candidates.push(...infectiousByBlock[y * COLS + x]);
+          }
+        }
+        const sourcePool = candidates.length ? candidates : infectiousAgents;
+        if (!sourcePool.length) continue;
+        const source = sourcePool[Math.floor(rng() * sourcePool.length)];
+        const layer = chooseLayer();
         agents.state[agent] = 1;
         agents.timer[agent] = Math.round((1.4 + rng() * 1.3) * STEPS_PER_DAY);
+        agents.source[agent] = source;
+        agents.infectedAt[agent] = step;
+        agents.generation[agent] = Math.max(1, agents.generation[source] + 1);
+        agents.secondary[source] += 1;
+        generationTotals[Math.min(generationTotals.length - 1, agents.generation[agent])] += 1;
+        transmissions.push({
+          source, target: agent, time: step, layer,
+          generation: agents.generation[agent], source_block: agents.block[source], target_block: block
+        });
         newInfections += 1;
-        const layer = chooseLayer();
         layerTotals[layer] += 1;
       } else if (state === 1 || state === 2) {
         if (agents.timer[agent] > 0) agents.timer[agent] -= 1;
@@ -337,7 +399,7 @@
   function advanceOne() {
     if (step >= TOTAL_STEPS - 1) { running = false; ui["play-button"].textContent = "▶"; return; }
     step += 1;
-    const incidence = mode === "demo" ? advanceDemo() : advanceResearch();
+    const incidence = advanceDemo();
     recordCurve(incidence);
   }
 
@@ -394,6 +456,75 @@
     const names = language === "zh" ? LAYERS_ZH : LAYERS;
     const max = Math.max(1, ...layerTotals);
     ui["layer-bars"].innerHTML = Array.from(layerTotals).map((value, index) => `<div><span>${names[index]}</span><i><b style="width:${value / max * 100}%"></b></i><strong>${Math.round(value)}</strong></div>`).join("");
+  }
+
+  function agentPosition(agent) {
+    if (realMobility && realMobility.agentCount === populationSize) {
+      const sample = step / realMobility.stride;
+      const first = Math.min(realMobility.samples - 1, Math.floor(sample));
+      const second = Math.min(realMobility.samples - 1, first + 1);
+      const alpha = sample - first;
+      const firstIndex = (first * populationSize + agent) * 2;
+      const secondIndex = (second * populationSize + agent) * 2;
+      return {
+        x: (realMobility.positions[firstIndex] * (1 - alpha) + realMobility.positions[secondIndex] * alpha) / 65535,
+        y: (realMobility.positions[firstIndex + 1] * (1 - alpha) + realMobility.positions[secondIndex + 1] * alpha) / 65535
+      };
+    }
+    const hour = (step % STEPS_PER_DAY) / 4;
+    const workFactor = hour < 7 ? 0 : hour < 9 ? (hour - 7) / 2 : hour < 17 ? 1 : hour < 19 ? 1 - (hour - 17) / 2 : 0;
+    return {
+      x: agents.homeX[agent] + (agents.workX[agent] - agents.homeX[agent]) * workFactor,
+      y: agents.homeY[agent] + (agents.workY[agent] - agents.homeY[agent]) * workFactor
+    };
+  }
+
+  function agentCanvasPoint(agent, width, height) {
+    const position = agentPosition(agent);
+    const margin = Math.min(width, height) * .045;
+    return {
+      x: margin + position.x * (width - margin * 2),
+      y: margin + (1 - position.y) * (height - margin * 2),
+      normalized: position
+    };
+  }
+
+  function updateAgentInspector() {
+    if (selectedAgent < 0 || !agents) {
+      ui["agent-inspector"].hidden = true;
+      return;
+    }
+    const zh = currentLanguage() === "zh";
+    const data = realCity && realCity.agents ? realCity.agents : null;
+    const point = agentPosition(selectedAgent);
+    let currentBlock = agents.block[selectedAgent];
+    if (realCity && realCity.blocks) {
+      const x = point.x * 25;
+      const y = point.y * 25;
+      const match = realCity.blocks.find((block) => x >= block[1] && x <= block[3] && y >= block[2] && y <= block[4]);
+      if (match) currentBlock = match[0];
+    }
+    const stateNames = ["S", "E", "I", "R"];
+    const values = [
+      [zh ? "状态" : "State", stateNames[agents.state[selectedAgent]]],
+      [zh ? "传播代" : "Generation", agents.generation[selectedAgent] >= 0 ? agents.generation[selectedAgent] : "—"],
+      [zh ? "感染来源" : "Source", agents.source[selectedAgent] >= 0 ? `Agent ${agents.source[selectedAgent]}` : (agents.generation[selectedAgent] === 0 ? (zh ? "初始种子" : "Seed case") : "—")],
+      [zh ? "继发感染" : "Secondary cases", agents.secondary[selectedAgent]],
+      [zh ? "年龄" : "Age", data ? data.age[selectedAgent] : "—"],
+      [zh ? "性别" : "Sex", data ? (data.sex[selectedAgent] === 0 ? (zh ? "女" : "Female") : (zh ? "男" : "Male")) : "—"],
+      [zh ? "职业" : "Occupation", data ? (zh ? OCCUPATIONS_ZH : OCCUPATIONS)[data.occupation[selectedAgent]] : "—"],
+      [zh ? "生命阶段" : "Life stage", data ? (zh ? LIFE_STAGES_ZH : LIFE_STAGES)[data.life_stage[selectedAgent]] : "—"],
+      [zh ? "交通方式" : "Mobility", data ? (zh ? MOBILITY_ZH : MOBILITY)[data.mobility[selectedAgent]] : "—"],
+      [zh ? "班次" : "Work shift", data ? (zh ? SHIFTS_ZH : SHIFTS)[data.work_shift[selectedAgent]] : "—"],
+      [zh ? "收入" : "Income", data ? Math.round(data.income[selectedAgent]).toLocaleString() : "—"],
+      [zh ? "家庭" : "Household", data ? `#${data.household[selectedAgent]}` : "—"],
+      [zh ? "社区" : "Community", data ? `#${data.community[selectedAgent]}` : "—"],
+      [zh ? "所在街区" : "Current block", `#${currentBlock}`],
+      [zh ? "坐标" : "Position", `${(point.x * 25).toFixed(2)}, ${(point.y * 25).toFixed(2)}`]
+    ];
+    ui["agent-inspector-title"].textContent = `${zh ? "Agent" : "Agent"} ${selectedAgent}`;
+    ui["agent-inspector-content"].innerHTML = values.map(([label, value]) => `<span>${label}</span><b>${value ?? "—"}</b>`).join("");
+    ui["agent-inspector"].hidden = false;
   }
 
   function resizeCanvas(canvas) {
@@ -522,6 +653,9 @@
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "#091016"; ctx.fillRect(0, 0, width, height);
+    ctx.save();
+    ctx.translate(viewport.x, viewport.y);
+    ctx.scale(viewport.scale, viewport.scale);
     let maxPrevalence = 0;
     let maxTransitAccess = 1;
     for (let block = 0; block < BLOCKS; block += 1) maxPrevalence = Math.max(maxPrevalence, (blockE[block] + blockI[block]) / Math.max(blockPopulation[block], 1));
@@ -553,36 +687,29 @@
     drawBuildings(ctx, width, height);
     drawRoads(ctx, width, height);
     drawFacilities(ctx, width, height);
-    if (mode === "demo" && agents && selectedLayer !== "density") {
-      const hour = (step % STEPS_PER_DAY) / 4;
-      const workFactor = hour < 7 ? 0 : hour < 9 ? (hour - 7) / 2 : hour < 17 ? 1 : hour < 19 ? 1 - (hour - 17) / 2 : 0;
+    if (agents && selectedLayer !== "density") {
       const colors = ["rgba(116,151,174,.30)", "#f2bd53", "#ff5d55", "#61cf8d"];
       const size = Math.max(1.2, Math.min(width, height) / 450);
-      const margin = Math.min(width, height) * .045;
-      const plotWidth = width - margin * 2;
-      const plotHeight = height - margin * 2;
       for (let agent = 0; agent < populationSize; agent += 1) {
-        let x;
-        let y;
-        if (realMobility && realMobility.agentCount === populationSize) {
-          const sample = step / realMobility.stride;
-          const first = Math.min(realMobility.samples - 1, Math.floor(sample));
-          const second = Math.min(realMobility.samples - 1, first + 1);
-          const alpha = sample - first;
-          const firstIndex = (first * populationSize + agent) * 2;
-          const secondIndex = (second * populationSize + agent) * 2;
-          x = (realMobility.positions[firstIndex] * (1 - alpha) + realMobility.positions[secondIndex] * alpha) / 65535;
-          y = (realMobility.positions[firstIndex + 1] * (1 - alpha) + realMobility.positions[secondIndex + 1] * alpha) / 65535;
-        } else {
-          x = agents.homeX[agent] + (agents.workX[agent] - agents.homeX[agent]) * workFactor;
-          y = agents.homeY[agent] + (agents.workY[agent] - agents.homeY[agent]) * workFactor;
-        }
+        if (agent === selectedAgent) continue;
+        const point = agentCanvasPoint(agent, width, height);
         ctx.fillStyle = colors[agents.state[agent]];
-        const px = margin + x * plotWidth;
-        const py = margin + (1 - y) * plotHeight;
-        ctx.fillRect(px, py, agents.state[agent] === 2 ? size * 2.2 : size, agents.state[agent] === 2 ? size * 2.2 : size);
+        ctx.fillRect(point.x, point.y, agents.state[agent] === 2 ? size * 2.2 : size, agents.state[agent] === 2 ? size * 2.2 : size);
+      }
+      if (selectedAgent >= 0 && selectedAgent < populationSize) {
+        const point = agentCanvasPoint(selectedAgent, width, height);
+        ctx.strokeStyle = "#ffe239";
+        ctx.lineWidth = 2.5 / viewport.scale;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 8 / viewport.scale, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 2.2 / viewport.scale, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
       }
     }
+    ctx.restore();
   }
 
   function updateSpatialLegend() {
@@ -632,21 +759,234 @@
     [1, 4, 7, 10, 14].forEach((day) => { const x = pad.l + (day - 1) / 13 * (width - pad.l - pad.r); ctx.fillText(`D${String(day).padStart(2, "0")}`, x, height - 8); });
   }
 
-  function updateAll() { updateMetrics(); updateLayerBars(); updateSpatialLegend(); drawCity(); drawCurve(); }
+  function drawGeneration() {
+    const canvas = ui["generation-canvas"];
+    const { width, height } = resizeCanvas(canvas);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "#11171f"; ctx.fillRect(0, 0, width, height);
+    const values = Array.from(generationTotals);
+    let last = values.length - 1;
+    while (last > 0 && values[last] === 0) last -= 1;
+    const shown = values.slice(0, last + 1);
+    const max = Math.max(1, ...shown);
+    const pad = { l: 35, r: 14, t: 18, b: 30 };
+    const gap = 5;
+    const barWidth = Math.max(3, (width - pad.l - pad.r - gap * shown.length) / shown.length);
+    shown.forEach((value, generation) => {
+      const x = pad.l + generation * (barWidth + gap);
+      const barHeight = value / max * (height - pad.t - pad.b);
+      const hue = (generation * 47 + 175) % 360;
+      ctx.fillStyle = `hsl(${hue} 68% 58%)`;
+      ctx.fillRect(x, height - pad.b - barHeight, barWidth, barHeight);
+      ctx.fillStyle = "#7d8a95"; ctx.font = "9px monospace"; ctx.textAlign = "center";
+      ctx.fillText(`G${generation}`, x + barWidth / 2, height - 10);
+      if (value > 0) {
+        ctx.fillStyle = "#d9e1e6";
+        ctx.fillText(String(value), x + barWidth / 2, Math.max(11, height - pad.b - barHeight - 5));
+      }
+    });
+  }
 
-  function tick() {
-    if (!running) return;
-    const speed = Number(ui["speed-select"].value);
-    for (let n = 0; n < speed; n += 1) advanceOne();
+  function drawTree() {
+    const canvas = ui["tree-canvas"];
+    const { width, height } = resizeCanvas(canvas);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "#11171f"; ctx.fillRect(0, 0, width, height);
+    treeHitAreas = [];
+    if (!agents) return;
+    const visibleEdges = transmissions.filter((edge) => edge.time <= step).slice(0, 3000);
+    const nodes = new Map();
+    for (let agent = 0; agent < populationSize; agent += 1) {
+      if (agents.generation[agent] === 0) nodes.set(agent, 0);
+    }
+    visibleEdges.forEach((edge) => { nodes.set(edge.source, Math.max(0, agents.generation[edge.source])); nodes.set(edge.target, edge.generation); });
+    const groups = new Map();
+    nodes.forEach((generation, agent) => {
+      if (!groups.has(generation)) groups.set(generation, []);
+      groups.get(generation).push(agent);
+    });
+    const generations = [...groups.keys()].sort((a, b) => a - b);
+    const positions = new Map();
+    const pad = { l: 24, r: 24, t: 16, b: 18 };
+    generations.forEach((generation, generationIndex) => {
+      const group = groups.get(generation);
+      group.forEach((agent, index) => positions.set(agent, {
+        x: pad.l + generationIndex / Math.max(1, generations.length - 1) * (width - pad.l - pad.r),
+        y: pad.t + (index + 1) / (group.length + 1) * (height - pad.t - pad.b)
+      }));
+    });
+    ctx.strokeStyle = "rgba(132,151,165,.22)"; ctx.lineWidth = 1;
+    visibleEdges.forEach((edge) => {
+      const source = positions.get(edge.source); const target = positions.get(edge.target);
+      if (!source || !target) return;
+      ctx.beginPath(); ctx.moveTo(source.x, source.y); ctx.lineTo(target.x, target.y); ctx.stroke();
+    });
+    nodes.forEach((generation, agent) => {
+      const position = positions.get(agent);
+      const radius = Math.min(8, 2.2 + Math.sqrt(agents.secondary[agent] || 0));
+      ctx.fillStyle = `hsl(${(generation * 47 + 175) % 360} 72% 58%)`;
+      ctx.beginPath(); ctx.arc(position.x, position.y, radius, 0, Math.PI * 2); ctx.fill();
+      if (agent === selectedAgent) {
+        ctx.strokeStyle = "#ffe239"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(position.x, position.y, radius + 4, 0, Math.PI * 2); ctx.stroke();
+      }
+      treeHitAreas.push({ agent, x: position.x, y: position.y, radius: Math.max(14, radius + 6) });
+    });
+  }
+
+  function buildRunDocument() {
+    const value = totals();
+    return {
+      schema: "synthetic-city-epidemic-run-v1",
+      created_at: new Date().toISOString(),
+      current_step: step,
+      timestep_minutes: 15,
+      population: populationSize,
+      config: { target_r0: targetR0, initial_seeds: initialSeeds, profile: ui["profile-select"].value, deterministic_seed: 20260824 },
+      summary: { ...value, cumulative_infections: cumulativeInfections },
+      timeseries: curves,
+      layer_totals: Array.from(layerTotals),
+      generation_totals: Array.from(generationTotals),
+      transmissions,
+      agent_metadata: realCity && realCity.agents ? realCity.agents : null,
+      agent_state: agents ? {
+        state: Array.from(agents.state), generation: Array.from(agents.generation), source: Array.from(agents.source),
+        infected_at: Array.from(agents.infectedAt), secondary: Array.from(agents.secondary), timer: Array.from(agents.timer)
+      } : null
+    };
+  }
+
+  function downloadRunDocument() {
+    const blob = new Blob([JSON.stringify(buildRunDocument())], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `synthetic-city-run-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+
+  function loadRunDocument(documentData) {
+    if (!documentData || documentData.schema !== "synthetic-city-epidemic-run-v1") throw new Error("Unsupported run JSON schema");
+    if (documentData.population !== 10000 || !documentData.agent_state) throw new Error("The public model accepts individual 10K run JSON files only");
+    ui["r0-range"].value = documentData.config.target_r0;
+    ui["r0-value"].textContent = Number(documentData.config.target_r0).toFixed(2);
+    ui["seed-count"].value = documentData.config.initial_seeds;
+    ui["profile-select"].value = documentData.config.profile;
+    restart();
+    step = Math.max(0, Math.min(TOTAL_STEPS - 1, Number(documentData.current_step) || 0));
+    transmissions = Array.isArray(documentData.transmissions) ? documentData.transmissions : [];
+    layerTotals = new Float64Array(7);
+    layerTotals.set((documentData.layer_totals || []).slice(0, 7));
+    generationTotals = new Uint32Array(32);
+    generationTotals.set((documentData.generation_totals || []).slice(0, 32));
+    curves = documentData.timeseries || curves;
+    agents.state.set(documentData.agent_state.state);
+    agents.generation.set(documentData.agent_state.generation);
+    agents.source.set(documentData.agent_state.source);
+    agents.infectedAt.set(documentData.agent_state.infected_at);
+    agents.secondary.set(documentData.agent_state.secondary);
+    if (documentData.agent_state.timer) agents.timer.set(documentData.agent_state.timer);
+    blockS.fill(0); blockE.fill(0); blockI.fill(0); blockR.fill(0);
+    cumulativeInfections = 0;
+    for (let agent = 0; agent < populationSize; agent += 1) {
+      const block = agents.block[agent];
+      const state = agents.state[agent];
+      if (state === 0) blockS[block] += 1;
+      else { cumulativeInfections += 1; if (state === 1) blockE[block] += 1; else if (state === 2) blockI[block] += 1; else blockR[block] += 1; }
+    }
+    ui["timeline-range"].value = step;
+    ui["run-data-status"].textContent = currentLanguage() === "zh" ? "已载入本地 run JSON" : "Local run JSON loaded";
     updateAll();
   }
 
-  document.querySelectorAll("[data-mode]").forEach((button) => button.addEventListener("click", () => {
-    mode = button.dataset.mode;
-    document.querySelectorAll("[data-mode]").forEach((item) => item.classList.toggle("active", item === button));
-    ui["research-notice"].hidden = mode !== "research";
-    restart();
-  }));
+  async function publishRunDocument() {
+    ui["publish-run"].disabled = true;
+    ui["run-data-status"].textContent = currentLanguage() === "zh" ? "正在上传…" : "Uploading…";
+    try {
+      const response = await fetch(new URL("runs", root.dataset.runApi), {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildRunDocument())
+      });
+      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+      const result = await response.json();
+      const networkUrl = new URL("../network/", window.location.href);
+      networkUrl.searchParams.set("run", result.id);
+      await navigator.clipboard?.writeText(networkUrl.href);
+      ui["run-data-status"].innerHTML = `<a href="${networkUrl.href}">${currentLanguage() === "zh" ? "24 小时链接已复制" : "24-hour link copied"}</a>`;
+    } catch (error) {
+      console.warn(error);
+      ui["run-data-status"].textContent = currentLanguage() === "zh" ? "临时存储 API 尚不可用" : "Temporary storage API unavailable";
+    } finally {
+      ui["publish-run"].disabled = false;
+    }
+  }
+
+  async function checkRunApi() {
+    try {
+      const response = await fetch(new URL("health", root.dataset.runApi), { cache: "no-store" });
+      if (!response.ok) throw new Error(String(response.status));
+      ui["publish-run"].disabled = false;
+    } catch (_) {
+      ui["publish-run"].disabled = true;
+      ui["run-data-status"].textContent = currentLanguage() === "zh" ? "本地 run · 24 小时分享等待 HTTPS" : "Local run · 24-hour sharing awaits HTTPS";
+    }
+  }
+
+  function updateAll() { updateMetrics(); updateLayerBars(); updateSpatialLegend(); updateAgentInspector(); drawCity(); drawCurve(); drawGeneration(); drawTree(); }
+
+  function tick() {
+    if (!running) return;
+    advanceOne();
+    updateAll();
+    scheduleTick();
+  }
+
+  function scheduleTick() {
+    window.clearTimeout(timer);
+    timer = null;
+    if (!running) return;
+    const speed = Math.max(1, Number(ui["speed-select"].value));
+    timer = window.setTimeout(tick, Math.max(20, BASE_PLAYBACK_MS / speed));
+  }
+
+  function zoomAt(canvasX, canvasY, factor) {
+    const next = Math.min(8, Math.max(1, viewport.scale * factor));
+    const ratio = next / viewport.scale;
+    viewport.x = canvasX - (canvasX - viewport.x) * ratio;
+    viewport.y = canvasY - (canvasY - viewport.y) * ratio;
+    viewport.scale = next;
+    if (next === 1) { viewport.x = 0; viewport.y = 0; }
+    drawCity();
+  }
+
+  function canvasCoordinates(event) {
+    const canvas = ui["city-canvas"];
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (event.clientX - rect.left) * canvas.width / rect.width,
+      y: (event.clientY - rect.top) * canvas.height / rect.height
+    };
+  }
+
+  function selectAgentAt(point) {
+    if (!agents) return;
+    const canvas = ui["city-canvas"];
+    const mapX = (point.x - viewport.x) / viewport.scale;
+    const mapY = (point.y - viewport.y) / viewport.scale;
+    const threshold = 11 * Math.min(2, window.devicePixelRatio || 1) / viewport.scale;
+    let nearest = -1;
+    let nearestDistance = threshold * threshold;
+    for (let agent = 0; agent < populationSize; agent += 1) {
+      const candidate = agentCanvasPoint(agent, canvas.width, canvas.height);
+      const distance = (candidate.x - mapX) ** 2 + (candidate.y - mapY) ** 2;
+      if (distance < nearestDistance) { nearestDistance = distance; nearest = agent; }
+    }
+    selectedAgent = nearest;
+    updateAgentInspector();
+    drawCity();
+  }
+
   document.querySelectorAll("[data-map-layer]").forEach((button) => button.addEventListener("click", () => {
     selectedLayer = button.dataset.mapLayer;
     document.querySelectorAll("[data-map-layer]").forEach((item) => item.classList.toggle("active", item === button));
@@ -655,22 +995,93 @@
   }));
   ui["r0-range"].addEventListener("input", () => { ui["r0-value"].textContent = Number(ui["r0-range"].value).toFixed(2); });
   ui["restart-button"].addEventListener("click", restart);
+  ui["download-run"].addEventListener("click", downloadRunDocument);
+  ui["publish-run"].addEventListener("click", publishRunDocument);
+  ui["run-upload"].addEventListener("change", async () => {
+    const file = ui["run-upload"].files && ui["run-upload"].files[0];
+    if (!file) return;
+    try { loadRunDocument(JSON.parse(await file.text())); }
+    catch (error) { ui["run-data-status"].textContent = error.message; }
+    finally { ui["run-upload"].value = ""; }
+  });
   ui["profile-select"].addEventListener("change", () => { activeProfile = profiles[ui["profile-select"].value]; updateProfileCard(); });
-  ui["play-button"].addEventListener("click", () => { running = !running; ui["play-button"].textContent = running ? "Ⅱ" : "▶"; });
-  ui["step-button"].addEventListener("click", () => { running = false; advanceOne(); updateAll(); });
+  ui["play-button"].addEventListener("click", () => {
+    running = !running;
+    ui["play-button"].textContent = running ? "Ⅱ" : "▶";
+    scheduleTick();
+  });
+  ui["step-button"].addEventListener("click", () => { running = false; window.clearTimeout(timer); advanceOne(); updateAll(); });
   ui["reset-button"].addEventListener("click", restart);
+  ui["speed-select"].addEventListener("change", scheduleTick);
   ui["timeline-range"].addEventListener("change", () => {
     const target = Number(ui["timeline-range"].value);
     if (target < step) restart();
     while (step < target) advanceOne();
     updateAll();
   });
-  window.addEventListener("resize", () => { drawCity(); drawCurve(); });
-  window.addEventListener("urban-language-change", () => { updateProfileCard(); updateLayerBars(); updateMetrics(); updateSpatialLegend(); });
+  ui["zoom-in"].addEventListener("click", () => zoomAt(ui["city-canvas"].width / 2, ui["city-canvas"].height / 2, 1.5));
+  ui["zoom-out"].addEventListener("click", () => zoomAt(ui["city-canvas"].width / 2, ui["city-canvas"].height / 2, 1 / 1.5));
+  ui["zoom-reset"].addEventListener("click", () => { viewport.scale = 1; viewport.x = 0; viewport.y = 0; drawCity(); });
+  ui["agent-inspector-close"].addEventListener("click", () => { selectedAgent = -1; updateAgentInspector(); drawCity(); });
+  ui["city-canvas"].addEventListener("wheel", (event) => {
+    event.preventDefault();
+    const point = canvasCoordinates(event);
+    zoomAt(point.x, point.y, event.deltaY < 0 ? 1.28 : 1 / 1.28);
+  }, { passive: false });
+  ui["city-canvas"].addEventListener("pointerdown", (event) => {
+    const point = canvasCoordinates(event);
+    pointerGesture = { startX: point.x, startY: point.y, lastX: point.x, lastY: point.y, moved: false };
+    ui["city-canvas"].setPointerCapture(event.pointerId);
+  });
+  ui["city-canvas"].addEventListener("pointermove", (event) => {
+    if (!pointerGesture) return;
+    const point = canvasCoordinates(event);
+    const dx = point.x - pointerGesture.lastX;
+    const dy = point.y - pointerGesture.lastY;
+    if (Math.abs(point.x - pointerGesture.startX) + Math.abs(point.y - pointerGesture.startY) > 5) pointerGesture.moved = true;
+    if (pointerGesture.moved) {
+      viewport.x += dx;
+      viewport.y += dy;
+      ui["city-canvas"].classList.add("is-panning");
+      drawCity();
+    }
+    pointerGesture.lastX = point.x;
+    pointerGesture.lastY = point.y;
+  });
+  ui["city-canvas"].addEventListener("pointerup", (event) => {
+    if (!pointerGesture) return;
+    const point = canvasCoordinates(event);
+    if (!pointerGesture.moved) selectAgentAt(point);
+    pointerGesture = null;
+    ui["city-canvas"].classList.remove("is-panning");
+  });
+  ui["city-canvas"].addEventListener("pointercancel", () => {
+    pointerGesture = null;
+    ui["city-canvas"].classList.remove("is-panning");
+  });
+  ui["tree-canvas"].addEventListener("click", (event) => {
+    const rect = ui["tree-canvas"].getBoundingClientRect();
+    const x = (event.clientX - rect.left) * ui["tree-canvas"].width / rect.width;
+    const y = (event.clientY - rect.top) * ui["tree-canvas"].height / rect.height;
+    let nearest = null;
+    let distance = Number.POSITIVE_INFINITY;
+    treeHitAreas.forEach((node) => {
+      const candidate = (node.x - x) ** 2 + (node.y - y) ** 2;
+      if (candidate <= node.radius ** 2 && candidate < distance) { nearest = node.agent; distance = candidate; }
+    });
+    if (nearest !== null) { selectedAgent = nearest; updateAgentInspector(); drawCity(); drawTree(); }
+  });
+  window.addEventListener("resize", () => { drawCity(); drawCurve(); drawGeneration(); drawTree(); });
+  window.addEventListener("urban-language-change", () => {
+    updateProfileCard(); updateLayerBars(); updateMetrics(); updateSpatialLegend(); updateAgentInspector();
+    if (realCity) {
+      const status = document.querySelector(".sandbox-pagebar .live-dot span");
+      if (status) status.textContent = currentLanguage() === "zh" ? "真实 10K 数据已加载" : "REAL 10K DATA LOADED";
+    }
+  });
 
-  timer = window.setInterval(tick, 90);
-  window.addEventListener("pagehide", () => window.clearInterval(timer));
+  window.addEventListener("pagehide", () => window.clearTimeout(timer));
   loadRealCityBundle()
     .catch((error) => console.warn("Using synthetic fallback city:", error))
-    .finally(restart);
+    .finally(() => { restart(); checkRunApi(); });
 })();
