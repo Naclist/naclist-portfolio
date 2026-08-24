@@ -1,0 +1,142 @@
+{{ define "styles" }}
+  {{ with resources.Get "css/urban-sandbox.css" }}
+    {{ $style := . | resources.Minify | resources.Fingerprint }}
+    <link rel="stylesheet" href="{{ $style.RelPermalink | absURL }}">
+  {{ end }}
+{{ end }}
+
+{{ define "main" }}
+<main class="urban-page sandbox-page" data-urban-page data-sandbox-root>
+  <nav class="urban-pagebar sandbox-pagebar">
+    <a class="urban-wordmark" href="{{ "/ambitions/" | relURL }}">SYNTHETIC CITY LAB</a>
+    <div class="urban-pagebar-actions">
+      <a class="text-link" href="{{ "/ambitions/documentation/" | relURL }}" data-i18n="documentation">Documentation</a>
+      <span class="live-dot"><i></i><span data-i18n="browser-preview">Browser preview</span></span>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-lang-button="en" class="active">EN</button>
+        <button type="button" data-lang-button="zh">中文</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="sandbox-header">
+    <div>
+      <span class="urban-kicker">INTERACTIVE EPIDEMIC SANDBOX</span>
+      <h1 data-i18n="sandbox-title">One city. Different transmission regimes.</h1>
+    </div>
+    <div class="sandbox-clock">
+      <span data-i18n="simulation-time">SIMULATION TIME</span>
+      <strong id="clock-day">DAY 01</strong><b id="clock-time">00:00</b>
+    </div>
+  </header>
+
+  <section class="sandbox-controls" aria-label="Simulation controls">
+    <div class="control-group mode-control">
+      <label data-i18n="population-mode">Population mode</label>
+      <div class="segmented-control" id="mode-control">
+        <button type="button" class="active" data-mode="demo"><span>10K</span><small>DEMO</small></button>
+        <button type="button" data-mode="research"><span>100K</span><small>RESEARCH</small></button>
+      </div>
+    </div>
+    <div class="control-group profile-control">
+      <label for="profile-select" data-i18n="transmission-profile">Transmission profile</label>
+      <select id="profile-select">
+        <option value="droplet" data-label-en="Close-range respiratory" data-label-zh="近距离呼吸道传播">Close-range respiratory</option>
+        <option value="airborne" data-label-en="Shared-air respiratory" data-label-zh="共享空气传播">Shared-air respiratory</option>
+        <option value="contact" data-label-en="Contact-mediated" data-label-zh="接触媒介传播">Contact-mediated</option>
+      </select>
+    </div>
+    <div class="control-group r0-control">
+      <label for="r0-range"><span data-i18n="target-r0">Target R0</span> <strong id="r0-value">1.50</strong></label>
+      <input id="r0-range" type="range" min="0.5" max="5" step="0.1" value="1.5">
+      <div class="range-scale"><span>0.5</span><span>5.0</span></div>
+    </div>
+    <div class="control-group seed-control">
+      <label for="seed-count" data-i18n="initial-seeds">Initial seeds</label>
+      <input id="seed-count" type="number" min="1" max="50" value="5">
+    </div>
+    <button class="restart-button" id="restart-button" type="button"><span>↻</span><b data-i18n="apply-restart">Apply & Restart</b></button>
+  </section>
+
+  <div class="research-notice" id="research-notice" hidden>
+    <b data-i18n="research-preview-title">100K research preview</b>
+    <span data-i18n="research-preview-copy">GitHub Pages renders block aggregates locally. Full 100K contact-driven execution connects to the Python service when deployed.</span>
+    <span class="service-pill" id="service-status">API: OFFLINE</span>
+  </div>
+
+  <section class="sandbox-workspace">
+    <div class="map-panel panel">
+      <div class="panel-heading">
+        <div><span class="panel-eyebrow">SPATIAL SPREAD</span><h2 data-i18n="city-state">City state</h2></div>
+        <div class="map-tools">
+          <button type="button" class="active" data-map-layer="state" data-i18n="layer-state">Disease state</button>
+          <button type="button" data-map-layer="density" data-i18n="layer-density">Infection density</button>
+          <button type="button" data-map-layer="flow" data-i18n="layer-flow">Mobility flow</button>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="city-canvas" aria-label="Synthetic city epidemic map"></canvas>
+        <div class="map-legend">
+          <span><i class="s"></i>S</span><span><i class="e"></i>E</span><span><i class="i"></i>I</span><span><i class="r"></i>R</span>
+        </div>
+        <div class="map-scale">0&nbsp;&nbsp; 2&nbsp;&nbsp; 4 km</div>
+      </div>
+    </div>
+
+    <aside class="metrics-panel panel">
+      <div class="panel-heading"><div><span class="panel-eyebrow">LIVE METRICS</span><h2 data-i18n="epidemic-summary">Epidemic summary</h2></div></div>
+      <div class="seir-metrics">
+        <div><span>S</span><strong id="metric-s">9,995</strong><small data-i18n="susceptible">Susceptible</small></div>
+        <div><span>E</span><strong id="metric-e">5</strong><small data-i18n="exposed">Exposed</small></div>
+        <div><span>I</span><strong id="metric-i">0</strong><small data-i18n="infectious">Infectious</small></div>
+        <div><span>R</span><strong id="metric-r">0</strong><small data-i18n="recovered">Recovered</small></div>
+      </div>
+      <div class="metric-rows">
+        <div><span data-i18n="expected-r0">Expected network R0</span><b id="metric-expected">1.50</b></div>
+        <div><span data-i18n="realized-r">Realized completed-case R</span><b id="metric-realized">—</b></div>
+        <div><span data-i18n="current-rt">Current Rt</span><b id="metric-rt">—</b></div>
+        <div><span data-i18n="affected-blocks">Affected blocks</span><b id="metric-blocks">1</b></div>
+        <div><span data-i18n="affected-communities">Affected communities</span><b id="metric-communities">1</b></div>
+      </div>
+      <div class="profile-card">
+        <span data-i18n="active-mechanism">ACTIVE MECHANISM</span>
+        <h3 id="profile-name">Close-range respiratory</h3>
+        <p id="profile-description">Repeated close contacts dominate.</p>
+        <div class="layer-weight-list" id="profile-weights"></div>
+      </div>
+      <div class="locked-profile"><span>⌁</span><div><b data-i18n="natural-history">Natural history</b><small data-i18n="locked-profile">Standard generic profile · LOCKED</small></div></div>
+    </aside>
+  </section>
+
+  <section class="analytics-grid">
+    <div class="curve-panel panel">
+      <div class="panel-heading"><div><span class="panel-eyebrow">DYNAMICS</span><h2 data-i18n="epidemic-curve">Epidemic curve</h2></div><div class="curve-legend"><span class="e">E</span><span class="i">I</span><span class="r">R</span></div></div>
+      <canvas id="curve-canvas" aria-label="SEIR epidemic curve"></canvas>
+    </div>
+    <div class="layer-panel panel">
+      <div class="panel-heading"><div><span class="panel-eyebrow">REALIZED EVENTS</span><h2 data-i18n="layer-contribution">Contact-layer contribution</h2></div></div>
+      <div class="layer-bars" id="layer-bars"></div>
+    </div>
+  </section>
+
+  <section class="playback-bar">
+    <button id="reset-button" type="button" title="Reset">↺</button>
+    <button id="play-button" class="play" type="button" title="Play / pause">▶</button>
+    <button id="step-button" type="button" title="Step">▶│</button>
+    <span class="timeline-day">D01</span>
+    <input id="timeline-range" type="range" min="0" max="1343" value="0">
+    <span class="timeline-day">D14</span>
+    <select id="speed-select" aria-label="Playback speed"><option value="1">1×</option><option value="4" selected>4×</option><option value="12">12×</option></select>
+  </section>
+
+  <footer class="sandbox-boundary">
+    <b>GENERIC MECHANISM PROFILES · ILLUSTRATIVE · NOT PATHOGEN-CALIBRATED</b>
+    <span data-i18n="sandbox-boundary">The browser preview preserves the interface and qualitative regimes; research claims require server-side contact simulation and stochastic replicates.</span>
+  </footer>
+</main>
+{{ end }}
+
+{{ define "scripts" }}
+  {{ with resources.Get "js/urban-common.js" }}{{ $script := . | resources.Minify | resources.Fingerprint }}<script src="{{ $script.RelPermalink | absURL }}" defer></script>{{ end }}
+  {{ with resources.Get "js/urban-sandbox.js" }}{{ $script := . | resources.Minify | resources.Fingerprint }}<script src="{{ $script.RelPermalink | absURL }}" defer></script>{{ end }}
+{{ end }}

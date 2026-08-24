@@ -1,0 +1,88 @@
+{{ define "styles" }}
+  {{ with resources.Get "css/urban-sandbox.css" }}
+    {{ $style := . | resources.Minify | resources.Fingerprint }}
+    <link rel="stylesheet" href="{{ $style.RelPermalink | absURL }}">
+  {{ end }}
+{{ end }}
+
+{{ define "main" }}
+<main class="urban-page urban-landing" data-urban-page>
+  <nav class="urban-pagebar" aria-label="Language and project navigation">
+    <a class="urban-wordmark" href="{{ "/ambitions/" | relURL }}">SYNTHETIC CITY LAB</a>
+    <div class="urban-pagebar-actions">
+      <span class="live-dot"><i></i><span data-i18n="fixed-substrate">Fixed substrate</span></span>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-lang-button="en" class="active">EN</button>
+        <button type="button" data-lang-button="zh">中文</button>
+      </div>
+    </div>
+  </nav>
+
+  <section class="urban-hero">
+    <div class="urban-kicker">AGENT-BASED SPATIOTEMPORAL SIMULATION</div>
+    <div class="lang-panel" data-lang="en">
+      <h1>A city that can be<br><em>questioned.</em></h1>
+      <p class="urban-lede">A reproducible synthetic society connecting urban form, daily mobility, temporal contacts, healthcare demand and illustrative respiratory transmission.</p>
+    </div>
+    <div class="lang-panel" data-lang="zh" hidden>
+      <h1>一座可以被<br><em>追问的城市。</em></h1>
+      <p class="urban-lede">一个可复现的合成社会：把城市形态、日常移动、时序接触、医疗需求和示意性呼吸道传播连接成同一个动态过程。</p>
+    </div>
+    <div class="urban-stat-strip" aria-label="Project scale">
+      <div><strong>10K</strong><span data-i18n="demo-agents">demo agents</span></div>
+      <div><strong>100K</strong><span data-i18n="research-agents">research agents</span></div>
+      <div><strong>15 min</strong><span data-i18n="time-resolution">time resolution</span></div>
+      <div><strong>7</strong><span data-i18n="contact-layers">contact layers</span></div>
+    </div>
+  </section>
+
+  <section class="urban-entry-grid">
+    <a class="urban-entry-card documentation-card" href="{{ "/ambitions/documentation/" | relURL }}">
+      <div class="entry-index">01</div>
+      <div class="entry-visual architecture-mini" aria-hidden="true">
+        <span>City</span><i></i><span>People</span><i></i><span>Contacts</span><i></i><span>Dynamics</span>
+      </div>
+      <div class="lang-panel" data-lang="en">
+        <h2>Documentation</h2>
+        <p>How the city is built, what the controls mean, and where interpretation must stop.</p>
+        <span class="entry-action">Read the field guide <b>↗</b></span>
+      </div>
+      <div class="lang-panel" data-lang="zh" hidden>
+        <h2>项目文档</h2>
+        <p>了解城市如何生成、控制项代表什么，以及科学解释的边界在哪里。</p>
+        <span class="entry-action">阅读操作与实现说明 <b>↗</b></span>
+      </div>
+    </a>
+
+    <a class="urban-entry-card sandbox-card" href="{{ "/ambitions/sandbox/" | relURL }}">
+      <div class="entry-index">02</div>
+      <div class="entry-visual map-mini" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <b></b><b></b><b></b>
+      </div>
+      <div class="lang-panel" data-lang="en">
+        <h2>Sandbox</h2>
+        <p>Choose a 10K individual demo or a 100K aggregate research view, then compare three transmission mechanisms.</p>
+        <span class="entry-action">Enter the simulation <b>↗</b></span>
+      </div>
+      <div class="lang-panel" data-lang="zh" hidden>
+        <h2>交互沙盒</h2>
+        <p>选择 10K 个体演示或 100K 聚合研究视图，再比较三类传播机制。</p>
+        <span class="entry-action">进入模拟实验 <b>↗</b></span>
+      </div>
+    </a>
+  </section>
+
+  <aside class="urban-boundary">
+    <span>INTERPRETATION BOUNDARY</span>
+    <p data-i18n="boundary-copy">Illustrative computational epidemiology. Not a forecast, clinical tool, or calibrated model of a named pathogen.</p>
+  </aside>
+</main>
+{{ end }}
+
+{{ define "scripts" }}
+  {{ with resources.Get "js/urban-common.js" }}
+    {{ $script := . | resources.Minify | resources.Fingerprint }}
+    <script src="{{ $script.RelPermalink | absURL }}" defer></script>
+  {{ end }}
+{{ end }}

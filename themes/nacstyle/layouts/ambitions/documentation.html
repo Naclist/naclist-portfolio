@@ -1,0 +1,152 @@
+{{ define "styles" }}
+  {{ with resources.Get "css/urban-sandbox.css" }}
+    {{ $style := . | resources.Minify | resources.Fingerprint }}
+    <link rel="stylesheet" href="{{ $style.RelPermalink | absURL }}">
+  {{ end }}
+{{ end }}
+
+{{ define "main" }}
+<main class="urban-page urban-docs" data-urban-page>
+  <nav class="urban-pagebar">
+    <a class="urban-wordmark" href="{{ "/ambitions/" | relURL }}">SYNTHETIC CITY LAB</a>
+    <div class="urban-pagebar-actions">
+      <a class="text-link" href="{{ "/ambitions/sandbox/" | relURL }}" data-i18n="open-sandbox">Open Sandbox ↗</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-lang-button="en" class="active">EN</button>
+        <button type="button" data-lang-button="zh">中文</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="docs-hero">
+    <div class="urban-kicker">DOCUMENTATION / 文档</div>
+    <div class="lang-panel" data-lang="en">
+      <h1>From city fabric<br>to transmission chains.</h1>
+      <p>A field guide to the model, the interface, and the limits of what a synthetic outbreak can tell us.</p>
+    </div>
+    <div class="lang-panel" data-lang="zh" hidden>
+      <h1>从城市空间<br>到传播链条。</h1>
+      <p>这是一份关于模型实现、界面操作和科学解释边界的双语指南。</p>
+    </div>
+  </header>
+
+  <div class="docs-shell">
+    <aside class="docs-toc">
+      <span data-i18n="on-page">ON THIS PAGE</span>
+      <a href="#overview" data-i18n="toc-overview">Overview</a>
+      <a href="#architecture" data-i18n="toc-architecture">Architecture</a>
+      <a href="#modes" data-i18n="toc-modes">Two modes</a>
+      <a href="#profiles" data-i18n="toc-profiles">Transmission profiles</a>
+      <a href="#controls" data-i18n="toc-controls">Controls</a>
+      <a href="#reading" data-i18n="toc-reading">Reading results</a>
+      <a href="#deployment" data-i18n="toc-deployment">Deployment boundary</a>
+    </aside>
+
+    <article class="docs-article">
+      <section id="overview" class="doc-section">
+        <div class="section-number">01</div>
+        <div class="lang-panel" data-lang="en">
+          <h2>What this project is</h2>
+          <p>The framework generates an equilibrated synthetic city and 10,000–100,000 synthetic residents. Every resident has a household, demographic identity, activity schedule, workplace or school, road-constrained mobility and time-stamped contacts.</p>
+          <p>The epidemic layer is deliberately downstream. It does not rebuild the city when Target R0 changes; it discards only disease state and replays transmission over the same society.</p>
+        </div>
+        <div class="lang-panel" data-lang="zh" hidden>
+          <h2>这是什么项目</h2>
+          <p>该框架生成一座达到数值均衡的合成城市，以及 10,000–100,000 名合成居民。每个人都有家庭、人口学身份、活动日程、工作地或学校、沿道路移动的轨迹和带时间戳的接触。</p>
+          <p>疫情层位于整个因果链下游。改变 Target R0 时不会重建城市，只会清空疾病状态，并在同一社会结构上重新播放传播过程。</p>
+        </div>
+        <div class="doc-callout"><b>ILLUSTRATIVE</b><span data-i18n="not-pathogen">No profile is calibrated to a named pathogen.</span></div>
+      </section>
+
+      <section id="architecture" class="doc-section">
+        <div class="section-number">02</div>
+        <div class="lang-panel" data-lang="en"><h2>Causal architecture</h2></div>
+        <div class="lang-panel" data-lang="zh" hidden><h2>因果架构</h2></div>
+        <div class="architecture-flow">
+          <div><small>01</small><strong data-i18n="arch-city">Urban structure</strong><span>roads · blocks · buildings</span></div>
+          <i>↓</i>
+          <div><small>02</small><strong data-i18n="arch-society">Synthetic society</strong><span>households · jobs · schools</span></div>
+          <i>↓</i>
+          <div><small>03</small><strong data-i18n="arch-behaviour">Daily behaviour</strong><span>activities · routes · healthcare</span></div>
+          <i>↓</i>
+          <div><small>04</small><strong data-i18n="arch-contact">Temporal contacts</strong><span>7 semantic layers · 15 min</span></div>
+          <i>↓</i>
+          <div class="accent"><small>05</small><strong data-i18n="arch-dynamics">Disease dynamics</strong><span>S → E → P → I → R</span></div>
+        </div>
+      </section>
+
+      <section id="modes" class="doc-section">
+        <div class="section-number">03</div>
+        <div class="lang-panel" data-lang="en"><h2>Two operating modes</h2></div>
+        <div class="lang-panel" data-lang="zh" hidden><h2>两套运行模式</h2></div>
+        <div class="mode-comparison">
+          <div><span class="mode-badge demo">DEMO</span><strong>10,000 agents</strong><p data-i18n="mode-demo-copy">Individual points, live movement and rapid parameter comparison. Designed for explanation and development.</p></div>
+          <div><span class="mode-badge research">RESEARCH</span><strong>100,000 agents</strong><p data-i18n="mode-research-copy">Block-level and density rendering. Full contact-driven runs require the Python simulation service.</p></div>
+        </div>
+      </section>
+
+      <section id="profiles" class="doc-section">
+        <div class="section-number">04</div>
+        <div class="lang-panel" data-lang="en">
+          <h2>Three transmission mechanisms</h2>
+          <p>These are generic mechanism profiles, not named diseases. Natural-history parameters stay locked in the public interface.</p>
+        </div>
+        <div class="lang-panel" data-lang="zh" hidden>
+          <h2>三类传播机制</h2>
+          <p>它们是通用机制 profile，不对应具体疾病。公开界面中的自然史参数保持锁定。</p>
+        </div>
+        <div class="profile-doc-grid">
+          <article><i class="profile-icon droplet">●</i><h3 data-i18n="droplet-name">Close-range respiratory</h3><p data-i18n="droplet-copy">Repeated household, school and workplace encounters dominate.</p><code>HH 1.7 · SCH 1.2 · WRK 1.0</code></article>
+          <article><i class="profile-icon airborne">◎</i><h3 data-i18n="airborne-name">Shared-air respiratory</h3><p data-i18n="airborne-copy">Crowded indoor, community and transport mixing receives more weight.</p><code>COM 1.2 · TRN 1.1 · WRK 1.1</code></article>
+          <article><i class="profile-icon contact">◇</i><h3 data-i18n="contact-name">Contact-mediated</h3><p data-i18n="contact-copy">Persistent close-contact environments matter more than transient mixing.</p><code>HH 1.5 · SCH 1.0 · HCR 1.1</code></article>
+        </div>
+      </section>
+
+      <section id="controls" class="doc-section">
+        <div class="section-number">05</div>
+        <div class="lang-panel" data-lang="en"><h2>How to operate the sandbox</h2></div>
+        <div class="lang-panel" data-lang="zh" hidden><h2>如何操作沙盒</h2></div>
+        <ol class="operation-list">
+          <li><b>1</b><span data-i18n="op-one">Choose 10K Demo or 100K Research mode.</span></li>
+          <li><b>2</b><span data-i18n="op-two">Choose one generic transmission mechanism.</span></li>
+          <li><b>3</b><span data-i18n="op-three">Set Target R0 and initial seed count.</span></li>
+          <li><b>4</b><span data-i18n="op-four">Press Apply & Restart. Changing R0 alone never regenerates the city.</span></li>
+          <li><b>5</b><span data-i18n="op-five">Use Play, Pause, step and timeline controls to inspect spread.</span></li>
+          <li><b>6</b><span data-i18n="op-six">Compare Target R0, Expected network R0, Realized R and current Rt separately.</span></li>
+        </ol>
+      </section>
+
+      <section id="reading" class="doc-section">
+        <div class="section-number">06</div>
+        <div class="lang-panel" data-lang="en"><h2>How to read the result</h2><p>One stochastic realization is an example, not an estimate. A reliable comparison uses repeated runs and reports medians, IQRs and simulation intervals. The contact-layer chart contains realized transmissions only.</p></div>
+        <div class="lang-panel" data-lang="zh" hidden><h2>如何阅读结果</h2><p>一次随机实现只是例子，不是估计值。可靠比较需要重复运行，并报告中位数、IQR 和模拟区间。接触图层贡献只统计真正发生的传播事件。</p></div>
+        <div class="metric-glossary">
+          <div><b>Target R0</b><span data-i18n="gloss-target">Requested experiment strength</span></div>
+          <div><b>Expected network R0</b><span data-i18n="gloss-expected">Calibrated expectation on the substrate</span></div>
+          <div><b>Realized R</b><span data-i18n="gloss-realized">Observed offspring among completed cases</span></div>
+          <div><b>Rt</b><span data-i18n="gloss-rt">Time-varying effective reproduction</span></div>
+        </div>
+      </section>
+
+      <section id="deployment" class="doc-section">
+        <div class="section-number">07</div>
+        <div class="lang-panel" data-lang="en"><h2>Website deployment boundary</h2><p>GitHub Pages serves the bilingual interface and a deterministic browser preview. It cannot run the Python ABM. The 100K full sandbox is designed to call a separately deployed FastAPI worker that keeps the contact substrate in memory and streams aggregate deltas to the browser.</p></div>
+        <div class="lang-panel" data-lang="zh" hidden><h2>网页部署边界</h2><p>GitHub Pages 承载双语界面和确定性的浏览器预览，但不能运行 Python ABM。100K 全量沙盒被设计为调用独立部署的 FastAPI worker：服务端常驻接触 substrate，向浏览器流式发送聚合变化。</p></div>
+        <pre class="deployment-diagram"><code>GitHub Pages UI
+      │ WebSocket / HTTPS
+      ▼
+FastAPI job service ── fixed 100K substrate
+      │
+      └── incremental SEIR · blocks · tree · layers</code></pre>
+      </section>
+    </article>
+  </div>
+</main>
+{{ end }}
+
+{{ define "scripts" }}
+  {{ with resources.Get "js/urban-common.js" }}
+    {{ $script := . | resources.Minify | resources.Fingerprint }}
+    <script src="{{ $script.RelPermalink | absURL }}" defer></script>
+  {{ end }}
+{{ end }}
