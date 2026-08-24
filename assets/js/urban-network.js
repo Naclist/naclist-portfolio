@@ -23,6 +23,9 @@
   let pointer = null;
   let forceGraph = null;
   let forceFitPending = false;
+  let forceFitTimer = null;
+  let forceResizeTimer = null;
+  const forceTuning = { nodeScale: 1, edgeScale: 1, arrowLength: 3, padding: 55 };
 
   function language() { return window.urbanLanguage ? window.urbanLanguage() : "en"; }
   function updateControlLabels() {
@@ -150,6 +153,55 @@
     const edge = link._edge;
     return selectedEdge === edge || (selectedNode && edge && (edge.source === selectedNode.id || edge.target === selectedNode.id));
   }
+  function forceNodeDisplayRadius(node) { return Math.max(.75, nodeRadius(node) * forceTuning.nodeScale); }
+  function forceNodeValue(node) { return Math.max(.04, (forceNodeDisplayRadius(node) / 3.8) ** 2); }
+  function forceLinkWidth(link) { return forceLinkHighlighted(link) ? 2.4 : Math.max(.22, .8 * forceTuning.edgeScale); }
+  function calculateForceTuning(nodeCount, width, height) {
+    const count = Math.max(1, nodeCount);
+    const spacing = Math.sqrt(Math.max(1, width * height) / count);
+    forceTuning.nodeScale = Math.max(.28, Math.min(1.45, spacing / 45));
+    forceTuning.edgeScale = Math.max(.24, Math.min(1, spacing / 42));
+    forceTuning.arrowLength = count > 1200 ? 0 : count > 450 ? 1.5 : 3;
+    forceTuning.padding = Math.max(28, Math.min(70, Math.min(width, height) * .07));
+    return {
+      charge: -Math.max(18, Math.min(160, spacing * 1.65)),
+      linkDistance: Math.max(12, Math.min(66, spacing * 1.2)),
+      distanceMax: Math.max(180, Math.min(950, Math.max(width, height) * .72)),
+      cooldownTicks: count > 2500 ? 280 : count > 800 ? 210 : 140
+    };
+  }
+  function fitForceGraph(duration = 500) {
+    if (!forceGraph || !forceGraph.graphData().nodes.length || ui["network-layout"].value !== "force") return;
+    forceGraph.zoomToFit(duration, forceTuning.padding);
+  }
+  function scheduleForceFit(delay = 350) {
+    clearTimeout(forceFitTimer);
+    forceFitTimer = setTimeout(() => fitForceGraph(450), delay);
+  }
+  function tuneForceGraph(reheat = false) {
+    if (!forceGraph) return;
+    const rect = ui["network-force"].getBoundingClientRect();
+    const count = forceGraph.graphData().nodes.length;
+    const tuning = calculateForceTuning(count, Math.max(1, rect.width), Math.max(1, rect.height));
+    forceGraph
+      .nodeVal(forceNodeValue)
+      .linkWidth(forceLinkWidth)
+      .linkDirectionalArrowLength(forceTuning.arrowLength)
+      .cooldownTicks(tuning.cooldownTicks);
+    forceGraph.d3Force("charge")?.strength(tuning.charge).distanceMin(4).distanceMax(tuning.distanceMax);
+    forceGraph.d3Force("link")?.distance(tuning.linkDistance).strength(count > 1200 ? .32 : .5);
+    if (typeof forceGraph.d3AlphaDecay === "function") forceGraph.d3AlphaDecay(count > 1200 ? .022 : .028);
+    if (typeof forceGraph.d3VelocityDecay === "function") forceGraph.d3VelocityDecay(.34);
+    if (reheat) forceGraph.d3ReheatSimulation();
+  }
+  function adaptForceToCanvas() {
+    if (!forceGraph || ui["network-layout"].value !== "force") return;
+    sizeForceGraph();
+    tuneForceGraph(true);
+    refreshForceStyles();
+    forceFitPending = true;
+    scheduleForceFit(500);
+  }
   function ensureForceGraph() {
     if (forceGraph) return true;
     if (typeof ForceGraph !== "function") return false;
@@ -158,11 +210,11 @@
       .nodeId("id")
       .nodeLabel(forceNodeLabel)
       .nodeColor(nodeColour)
-      .nodeVal((node) => Math.max(1, nodeRadius(node) ** 2 / 5))
+      .nodeVal(forceNodeValue)
       .nodeRelSize(3.8)
       .linkColor((link) => forceLinkHighlighted(link) ? "rgba(255,226,57,.9)" : "rgba(122,148,164,.24)")
-      .linkWidth((link) => forceLinkHighlighted(link) ? 2.4 : .8)
-      .linkDirectionalArrowLength(3)
+      .linkWidth(forceLinkWidth)
+      .linkDirectionalArrowLength(forceTuning.arrowLength)
       .linkDirectionalArrowRelPos(1)
       .linkDirectionalParticles((link) => forceLinkHighlighted(link) ? 1 : 0)
       .linkDirectionalParticleWidth(1.4)
@@ -174,7 +226,7 @@
       .nodeCanvasObject((node, ctx, globalScale) => {
         if (!selectedNode || node.id !== selectedNode.id) return;
         ctx.beginPath();
-        ctx.arc(node.x, node.y, nodeRadius(node) + 5 / globalScale, 0, Math.PI * 2);
+        ctx.arc(node.x, node.y, forceNodeDisplayRadius(node) + 5 / globalScale, 0, Math.PI * 2);
         ctx.strokeStyle = "#ffe239";
         ctx.lineWidth = 2 / globalScale;
         ctx.stroke();
@@ -185,24 +237,37 @@
         selectedEdge = link._edge;
         updateInspector();
         refreshForceStyles();
+      })
+      .onEngineStop(() => {
+        if (!forceFitPending) return;
+        forceFitPending = false;
+        fitForceGraph(650);
       });
-    forceGraph.d3Force("charge")?.strength(-75);
-    forceGraph.d3Force("link")?.distance(42).strength(.5);
     return true;
   }
   function sizeForceGraph() {
-    if (!forceGraph) return;
+    if (!forceGraph) return { width: 0, height: 0 };
     const rect = ui["network-force"].getBoundingClientRect();
-    forceGraph.width(Math.max(1, Math.round(rect.width))).height(Math.max(1, Math.round(rect.height)));
+    const width = Math.max(1, Math.round(rect.width));
+    const height = Math.max(1, Math.round(rect.height));
+    forceGraph.width(width).height(height);
+    return { width, height };
   }
   function refreshForceStyles() {
     if (!forceGraph) return;
     forceGraph
       .nodeColor(nodeColour)
-      .nodeVal((node) => Math.max(1, nodeRadius(node) ** 2 / 5))
+      .nodeVal(forceNodeValue)
       .nodeLabel(forceNodeLabel)
       .linkColor((link) => forceLinkHighlighted(link) ? "rgba(255,226,57,.9)" : "rgba(122,148,164,.24)")
-      .linkWidth((link) => forceLinkHighlighted(link) ? 2.4 : .8);
+      .linkWidth(forceLinkWidth)
+      .linkDirectionalArrowLength(forceTuning.arrowLength);
+  }
+  function forceInitialNode(node, index, count, width, height) {
+    const spacing = Math.max(6, Math.min(24, Math.sqrt(Math.max(1, width * height) / Math.max(1, count)) * .65));
+    const angle = (index + 1) * 2.399963229728653 + (node.generation % 7) * .07;
+    const radius = spacing * Math.sqrt(index + 1);
+    return { ...node, x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, vx: 0, vy: 0 };
   }
   function updateForceData(fit = false) {
     if (!ensureForceGraph()) {
@@ -211,19 +276,17 @@
       draw();
       return;
     }
-    sizeForceGraph();
+    const dimensions = sizeForceGraph();
     const visible = visibleNodeIds();
-    const graphNodes = nodes.filter((node) => visible.has(node.id)).map((node) => ({ ...node }));
+    const visibleNodes = nodes.filter((node) => visible.has(node.id));
+    const graphNodes = visibleNodes.map((node, index) => forceInitialNode(node, index, visibleNodes.length, dimensions.width, dimensions.height));
     const graphLinks = filteredEdges().map((edge) => ({ source: edge.source, target: edge.target, _edge: edge }));
     forceGraph.graphData({ nodes: graphNodes, links: graphLinks });
+    tuneForceGraph(true);
     refreshForceStyles();
     if (fit && graphNodes.length) {
       forceFitPending = true;
-      setTimeout(() => {
-        if (!forceFitPending || ui["network-layout"].value !== "force") return;
-        forceGraph.zoomToFit(500, 55);
-        forceFitPending = false;
-      }, 500);
+      scheduleForceFit(graphNodes.length > 800 ? 800 : 350);
     }
   }
 
@@ -347,7 +410,7 @@
   ui["network-find"].addEventListener("click",()=>{if(!selectAgent(ui["network-search"].value))ui["network-status"].textContent=language()==="zh"?"该 Agent 不在传播网络中":"Agent is not present in this transmission network";});
   ui["network-search"].addEventListener("keydown",(event)=>{if(event.key==="Enter")ui["network-find"].click();});
   ui["network-reset-view"].addEventListener("click",()=>{
-    if (ui["network-layout"].value === "force" && forceGraph) forceGraph.zoomToFit(500,55);
+    if (ui["network-layout"].value === "force" && forceGraph) fitForceGraph(500);
     else { viewport.scale=1;viewport.x=0;viewport.y=0;draw(); }
   });
   ui["network-download"].addEventListener("click",downloadRun);
@@ -357,7 +420,14 @@
   ui["network-canvas"].addEventListener("pointermove",(event)=>{if(!pointer)return;const point=canvasCoordinates(event);if(Math.abs(point.x-pointer.startX)+Math.abs(point.y-pointer.startY)>5)pointer.moved=true;if(pointer.moved){viewport.x+=point.x-pointer.lastX;viewport.y+=point.y-pointer.lastY;ui["network-canvas"].classList.add("is-panning");draw();}pointer.lastX=point.x;pointer.lastY=point.y;});
   ui["network-canvas"].addEventListener("pointerup",(event)=>{if(!pointer)return;const point=canvasCoordinates(event);if(!pointer.moved)selectAt(point);pointer=null;ui["network-canvas"].classList.remove("is-panning");});
   ui["network-canvas"].addEventListener("pointercancel",()=>{pointer=null;ui["network-canvas"].classList.remove("is-panning");});
-  window.addEventListener("resize",draw);
+  window.addEventListener("resize",()=>{ if (ui["network-layout"].value !== "force") draw(); });
+  if (typeof ResizeObserver === "function") {
+    new ResizeObserver(() => {
+      if (ui["network-layout"].value !== "force" || !forceGraph) return;
+      clearTimeout(forceResizeTimer);
+      forceResizeTimer = setTimeout(adaptForceToCanvas, 120);
+    }).observe(ui["network-force"].parentElement);
+  }
   window.addEventListener("urban-language-change",()=>{updateControlLabels();updateInspector();drawLegend();});
 
   const runId=new URLSearchParams(window.location.search).get("run");
