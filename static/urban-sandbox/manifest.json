@@ -1,0 +1,11 @@
+{
+  "schema": "synthetic-city-web-v1",
+  "population": 10000,
+  "simulation_steps": 1344,
+  "sample_stride": 4,
+  "mobility_samples": 336,
+  "city_file": "city-10k.json.gz",
+  "mobility_file": "mobility-10k.bin.gz",
+  "source": "generic_respiratory_14d_base",
+  "interpretation": "Synthetic demonstration data; not real geography."
+}

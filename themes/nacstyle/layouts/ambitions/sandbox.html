@@ -6,7 +6,7 @@
 {{ end }}
 
 {{ define "main" }}
-<main class="urban-page sandbox-page" data-urban-page data-sandbox-root>
+<main class="urban-page sandbox-page" data-urban-page data-sandbox-root data-bundle-url="{{ "/urban-sandbox/" | relURL }}">
   <nav class="urban-pagebar sandbox-pagebar">
     <a class="urban-wordmark" href="{{ "/ambitions/" | relURL }}">SYNTHETIC CITY LAB</a>
     <div class="urban-pagebar-actions">
@@ -69,15 +69,20 @@
       <div class="panel-heading">
         <div><span class="panel-eyebrow">SPATIAL SPREAD</span><h2 data-i18n="city-state">City state</h2></div>
         <div class="map-tools">
-          <button type="button" class="active" data-map-layer="state" data-i18n="layer-state">Disease state</button>
+          <button type="button" class="active" data-map-layer="urban" data-i18n="layer-urban">City fabric</button>
+          <button type="button" data-map-layer="transit" data-i18n="layer-transit">Public transport</button>
+          <button type="button" data-map-layer="flow" data-i18n="layer-flow">Traffic flow</button>
+          <button type="button" data-map-layer="state" data-i18n="layer-state">Disease state</button>
           <button type="button" data-map-layer="density" data-i18n="layer-density">Infection density</button>
-          <button type="button" data-map-layer="flow" data-i18n="layer-flow">Mobility flow</button>
         </div>
       </div>
       <div class="canvas-wrap">
         <canvas id="city-canvas" aria-label="Synthetic city epidemic map"></canvas>
-        <div class="map-legend">
-          <span><i class="s"></i>S</span><span><i class="e"></i>E</span><span><i class="i"></i>I</span><span><i class="r"></i>R</span>
+        <div class="map-legend" id="spatial-legend" aria-live="polite">
+          <span><i style="--legend-color:#18352e"></i>Residential</span>
+          <span><i style="--legend-color:#3f3430"></i>Commercial</span>
+          <span><i style="--legend-color:#343b4b"></i>Office</span>
+          <span><i style="--legend-color:#1c4230"></i>Green</span>
         </div>
         <div class="map-scale">0&nbsp;&nbsp; 2&nbsp;&nbsp; 4 km</div>
       </div>

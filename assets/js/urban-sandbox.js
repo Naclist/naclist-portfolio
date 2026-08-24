@@ -6,7 +6,7 @@
 
   const STEPS_PER_DAY = 96;
   const TOTAL_STEPS = 14 * STEPS_PER_DAY;
-  const COLS = 32;
+  const COLS = 20;
   const ROWS = 20;
   const BLOCKS = COLS * ROWS;
   const LAYERS = ["Household", "School", "Workplace", "Community", "Transport", "Healthcare", "Transient"];
@@ -36,12 +36,12 @@
     "metric-expected", "metric-realized", "metric-rt", "metric-blocks",
     "metric-communities", "profile-name", "profile-description", "profile-weights",
     "layer-bars", "timeline-range", "reset-button", "play-button", "step-button",
-    "speed-select"
+    "speed-select", "spatial-legend"
   ].map((id) => [id, document.getElementById(id)]));
 
   let mode = "demo";
   let populationSize = 10000;
-  let selectedLayer = "state";
+  let selectedLayer = "urban";
   let running = false;
   let timer = null;
   let rng = mulberry32(20260824);
@@ -54,6 +54,8 @@
   let layerTotals = new Float64Array(7);
   let cumulativeInfections = 0;
   let initialSeeds = 5;
+  let realCity = null;
+  let realMobility = null;
 
   function mulberry32(seed) {
     return function random() {
@@ -62,6 +64,46 @@
       value ^= value + Math.imul(value ^ value >>> 7, value | 61);
       return ((value ^ value >>> 14) >>> 0) / 4294967296;
     };
+  }
+
+  async function decompressedBuffer(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Unable to load ${url}: ${response.status}`);
+    const compressed = await response.arrayBuffer();
+    const bytes = new Uint8Array(compressed);
+    if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return compressed;
+    if (!("DecompressionStream" in window)) {
+      throw new Error("This browser does not support gzip DecompressionStream");
+    }
+    return new Response(
+      new Blob([compressed]).stream().pipeThrough(new DecompressionStream("gzip"))
+    ).arrayBuffer();
+  }
+
+  async function loadRealCityBundle() {
+    const base = new URL(root.dataset.bundleUrl, window.location.origin);
+    const [manifestResponse, cityBuffer, mobilityBuffer] = await Promise.all([
+      fetch(new URL("manifest.json", base)),
+      decompressedBuffer(new URL("city-10k.json.gz", base)),
+      decompressedBuffer(new URL("mobility-10k.bin.gz", base))
+    ]);
+    if (!manifestResponse.ok) throw new Error("Unable to load city manifest");
+    const manifest = await manifestResponse.json();
+    realCity = JSON.parse(new TextDecoder().decode(cityBuffer));
+    const view = new DataView(mobilityBuffer);
+    const magic = String.fromCharCode(...new Uint8Array(mobilityBuffer, 0, 4));
+    if (magic !== "ABM1") throw new Error("Invalid mobility bundle");
+    realMobility = {
+      agentCount: view.getUint32(4, true),
+      samples: view.getUint16(8, true),
+      stride: view.getUint16(10, true),
+      positions: new Uint16Array(mobilityBuffer, 16)
+    };
+    if (realMobility.agentCount !== manifest.population) {
+      throw new Error("Population and mobility bundle disagree");
+    }
+    const status = document.querySelector(".sandbox-pagebar .live-dot span");
+    if (status) status.textContent = currentLanguage() === "zh" ? "真实 10K 数据已加载" : "REAL 10K DATA LOADED";
   }
 
   function poisson(lambda) {
@@ -102,6 +144,22 @@
     return result;
   }
 
+  function cityPopulation(total) {
+    if (!realCity || !realCity.blocks || realCity.blocks.length !== BLOCKS) {
+      return distributePopulation(total);
+    }
+    const source = realCity.blocks.map((block) => Number(block[6]));
+    const sourceTotal = source.reduce((sum, value) => sum + value, 0);
+    const result = new Int32Array(BLOCKS);
+    let assigned = 0;
+    source.forEach((value, block) => {
+      result[block] = Math.floor(total * value / Math.max(sourceTotal, 1));
+      assigned += result[block];
+    });
+    for (let block = 0; assigned < total; assigned += 1, block = (block + 37) % BLOCKS) result[block] += 1;
+    return result;
+  }
+
   function createAgents(total) {
     const homeX = new Float32Array(total);
     const homeY = new Float32Array(total);
@@ -136,7 +194,7 @@
     rng = mulberry32(20260824 + Math.round(targetR0 * 100) + initialSeeds * 17 + (mode === "research" ? 999 : 0) + Object.keys(profiles).indexOf(ui["profile-select"].value) * 111);
     step = 0;
     layerTotals = new Float64Array(7);
-    blockPopulation = distributePopulation(populationSize);
+    blockPopulation = cityPopulation(populationSize);
     blockS = new Int32Array(blockPopulation);
     blockE = new Int32Array(BLOCKS);
     blockI = new Int32Array(BLOCKS);
@@ -145,12 +203,26 @@
     blockLayer = new Float64Array(BLOCKS * 7);
     curves = { s: [], e: [], i: [], r: [], incidence: [] };
     cumulativeInfections = initialSeeds;
-    const seedBlock = Math.floor(ROWS * .53) * COLS + Math.floor(COLS * .58);
+    const preferredSeedBlock = Math.floor(ROWS * .53) * COLS + Math.floor(COLS * .58);
+    let seedBlock = preferredSeedBlock;
+    if (blockPopulation[seedBlock] < initialSeeds) {
+      const preferredX = preferredSeedBlock % COLS;
+      const preferredY = Math.floor(preferredSeedBlock / COLS);
+      let bestDistance = Number.POSITIVE_INFINITY;
+      for (let block = 0; block < BLOCKS; block += 1) {
+        if (blockPopulation[block] < initialSeeds) continue;
+        const distance = Math.abs(block % COLS - preferredX) + Math.abs(Math.floor(block / COLS) - preferredY);
+        if (distance < bestDistance) { bestDistance = distance; seedBlock = block; }
+      }
+    }
     const actualSeeds = Math.min(initialSeeds, blockS[seedBlock]);
     blockS[seedBlock] -= actualSeeds;
     blockE[seedBlock] += actualSeeds;
     if (mode === "demo") {
       agents = createAgents(populationSize);
+      if (realCity && realCity.agents && realCity.agents.block.length === populationSize) {
+        agents.block.set(realCity.agents.block.map((value) => Math.max(0, value)));
+      }
       let seeded = 0;
       for (let a = 0; a < populationSize && seeded < actualSeeds; a += 1) {
         if (agents.block[a] === seedBlock) { agents.state[a] = 1; agents.timer[a] = 2 * STEPS_PER_DAY + Math.floor(rng() * 24); seeded += 1; }
@@ -335,6 +407,17 @@
 
   function blockGeometry(block, width, height) {
     const margin = Math.min(width, height) * .045;
+    if (realCity && realCity.blocks && realCity.blocks[block]) {
+      const value = realCity.blocks[block];
+      const plotWidth = width - margin * 2;
+      const plotHeight = height - margin * 2;
+      return {
+        x: margin + value[1] / 25 * plotWidth,
+        y: margin + (25 - value[4]) / 25 * plotHeight,
+        w: (value[3] - value[1]) / 25 * plotWidth,
+        h: (value[4] - value[2]) / 25 * plotHeight
+      };
+    }
     const cellW = (width - margin * 2) / COLS;
     const cellH = (height - margin * 2) / ROWS;
     return { x: margin + (block % COLS) * cellW, y: margin + Math.floor(block / COLS) * cellH, w: cellW, h: cellH };
@@ -342,6 +425,43 @@
 
   function drawRoads(ctx, width, height) {
     ctx.save();
+    if (realCity && realCity.roads) {
+      const margin = Math.min(width, height) * .045;
+      const plotWidth = width - margin * 2;
+      const plotHeight = height - margin * 2;
+      let maxFlow = 1;
+      let maxTransit = 1;
+      realCity.roads.forEach((road) => {
+        maxFlow = Math.max(maxFlow, road[6]);
+        maxTransit = Math.max(maxTransit, road[7]);
+      });
+      realCity.roads.forEach((road) => {
+        const roadType = road[4];
+        if (selectedLayer === "transit") {
+          const intensity = Math.log1p(road[7]) / Math.log1p(maxTransit);
+          if (intensity < .04) return;
+          ctx.strokeStyle = `rgba(78,225,210,${.12 + intensity * .82})`;
+          ctx.lineWidth = .5 + intensity * 5;
+        } else if (selectedLayer === "flow") {
+          const intensity = Math.log1p(road[6]) / Math.log1p(maxFlow);
+          const ratio = Math.min(1, road[10]);
+          const red = Math.round(90 + ratio * 165);
+          const green = Math.round(205 - ratio * 135);
+          ctx.strokeStyle = `rgba(${red},${green},68,${.10 + intensity * .78})`;
+          ctx.lineWidth = .45 + intensity * 4.4;
+        } else {
+          const alpha = [0.19, 0.28, 0.48, 0.14, 0.12][roadType] || .16;
+          ctx.strokeStyle = `rgba(190,204,214,${alpha})`;
+          ctx.lineWidth = [0.55, 1.0, 2.1, 0.45, 0.35][roadType] || .5;
+        }
+        ctx.beginPath();
+        ctx.moveTo(margin + road[0] / 25 * plotWidth, margin + (25 - road[1]) / 25 * plotHeight);
+        ctx.lineTo(margin + road[2] / 25 * plotWidth, margin + (25 - road[3]) / 25 * plotHeight);
+        ctx.stroke();
+      });
+      ctx.restore();
+      return;
+    }
     ctx.strokeStyle = selectedLayer === "flow" ? "rgba(78,225,210,.45)" : "rgba(151,166,177,.18)";
     for (let x = 0; x <= COLS; x += 1) {
       const a = blockGeometry(Math.min(x, COLS - 1), width, height);
@@ -362,6 +482,40 @@
     ctx.restore();
   }
 
+  function drawBuildings(ctx, width, height) {
+    if (!realCity || !realCity.buildings || selectedLayer === "density") return;
+    const margin = Math.min(width, height) * .045;
+    const plotWidth = width - margin * 2;
+    const plotHeight = height - margin * 2;
+    const palette = ["#28485a", "#514635", "#5b4735", "#3b5748", "#4a3e5b", "#365662", "#615636"];
+    realCity.buildings.forEach((building) => {
+      const x = margin + building[1] / 25 * plotWidth;
+      const y = margin + (25 - building[4]) / 25 * plotHeight;
+      const w = Math.max(.55, (building[3] - building[1]) / 25 * plotWidth);
+      const h = Math.max(.55, (building[4] - building[2]) / 25 * plotHeight);
+      ctx.fillStyle = palette[building[5] % palette.length];
+      ctx.globalAlpha = selectedLayer === "urban" ? .78 : .30;
+      ctx.fillRect(x, y, w, h);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function drawFacilities(ctx, width, height) {
+    if (!realCity || !realCity.facilities) return;
+    const margin = Math.min(width, height) * .045;
+    const plotWidth = width - margin * 2;
+    const plotHeight = height - margin * 2;
+    realCity.facilities.forEach((facility) => {
+      const x = margin + facility[2] / 25 * plotWidth;
+      const y = margin + (25 - facility[3]) / 25 * plotHeight;
+      ctx.fillStyle = facility[1] === 2 ? "#ff6d67" : "#d8f5f1";
+      ctx.strokeStyle = "rgba(8,15,20,.8)";
+      ctx.lineWidth = 1;
+      ctx.fillRect(x - 2.5, y - 2.5, 5, 5);
+      ctx.strokeRect(x - 2.5, y - 2.5, 5, 5);
+    });
+  }
+
   function drawCity() {
     const canvas = ui["city-canvas"];
     const { width, height } = resizeCanvas(canvas);
@@ -369,14 +523,23 @@
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "#091016"; ctx.fillRect(0, 0, width, height);
     let maxPrevalence = 0;
+    let maxTransitAccess = 1;
     for (let block = 0; block < BLOCKS; block += 1) maxPrevalence = Math.max(maxPrevalence, (blockE[block] + blockI[block]) / Math.max(blockPopulation[block], 1));
+    if (realCity && realCity.blocks) realCity.blocks.forEach((block) => { maxTransitAccess = Math.max(maxTransitAccess, block[9]); });
+    const landUsePalette = ["#18352e", "#243e35", "#3f3430", "#343b4b", "#453b31", "#343944", "#394049", "#3b2f3e", "#1c4230"];
+    const maxBlockPopulation = Math.max(...blockPopulation);
     for (let block = 0; block < BLOCKS; block += 1) {
       const g = blockGeometry(block, width, height);
-      const density = blockPopulation[block] / Math.max(...blockPopulation);
+      const density = blockPopulation[block] / maxBlockPopulation;
       const prevalence = (blockE[block] + blockI[block]) / Math.max(blockPopulation[block], 1);
       if (selectedLayer === "density") {
         const intensity = maxPrevalence ? prevalence / maxPrevalence : 0;
         ctx.fillStyle = `rgba(255,93,85,${.035 + intensity * .82})`;
+      } else if (selectedLayer === "transit" && realCity) {
+        const access = realCity.blocks[block][9] / maxTransitAccess;
+        ctx.fillStyle = `rgba(24,${38 + Math.round(access * 85)},${45 + Math.round(access * 100)},${.22 + access * .58})`;
+      } else if (selectedLayer === "urban" && realCity) {
+        ctx.fillStyle = landUsePalette[realCity.blocks[block][5] % landUsePalette.length];
       } else {
         const green = 22 + Math.round(density * 32);
         ctx.fillStyle = `rgb(12,${green},${29 + Math.round(density * 18)})`;
@@ -387,22 +550,63 @@
         ctx.fillRect(g.x + 1, g.y + 1, Math.max(0, g.w - 2), Math.max(0, g.h - 2));
       }
     }
+    drawBuildings(ctx, width, height);
     drawRoads(ctx, width, height);
+    drawFacilities(ctx, width, height);
     if (mode === "demo" && agents && selectedLayer !== "density") {
       const hour = (step % STEPS_PER_DAY) / 4;
       const workFactor = hour < 7 ? 0 : hour < 9 ? (hour - 7) / 2 : hour < 17 ? 1 : hour < 19 ? 1 - (hour - 17) / 2 : 0;
       const colors = ["rgba(116,151,174,.30)", "#f2bd53", "#ff5d55", "#61cf8d"];
       const size = Math.max(1.2, Math.min(width, height) / 450);
+      const margin = Math.min(width, height) * .045;
+      const plotWidth = width - margin * 2;
+      const plotHeight = height - margin * 2;
       for (let agent = 0; agent < populationSize; agent += 1) {
-        const x = agents.homeX[agent] + (agents.workX[agent] - agents.homeX[agent]) * workFactor;
-        const y = agents.homeY[agent] + (agents.workY[agent] - agents.homeY[agent]) * workFactor;
+        let x;
+        let y;
+        if (realMobility && realMobility.agentCount === populationSize) {
+          const sample = step / realMobility.stride;
+          const first = Math.min(realMobility.samples - 1, Math.floor(sample));
+          const second = Math.min(realMobility.samples - 1, first + 1);
+          const alpha = sample - first;
+          const firstIndex = (first * populationSize + agent) * 2;
+          const secondIndex = (second * populationSize + agent) * 2;
+          x = (realMobility.positions[firstIndex] * (1 - alpha) + realMobility.positions[secondIndex] * alpha) / 65535;
+          y = (realMobility.positions[firstIndex + 1] * (1 - alpha) + realMobility.positions[secondIndex + 1] * alpha) / 65535;
+        } else {
+          x = agents.homeX[agent] + (agents.workX[agent] - agents.homeX[agent]) * workFactor;
+          y = agents.homeY[agent] + (agents.workY[agent] - agents.homeY[agent]) * workFactor;
+        }
         ctx.fillStyle = colors[agents.state[agent]];
-        const g0 = blockGeometry(0, width, height);
-        const px = g0.x + x * (width - 2 * g0.x);
-        const py = g0.y + y * (height - 2 * g0.y);
+        const px = margin + x * plotWidth;
+        const py = margin + (1 - y) * plotHeight;
         ctx.fillRect(px, py, agents.state[agent] === 2 ? size * 2.2 : size, agents.state[agent] === 2 ? size * 2.2 : size);
       }
     }
+  }
+
+  function updateSpatialLegend() {
+    const zh = currentLanguage() === "zh";
+    const legends = {
+      urban: [
+        ["#18352e", zh ? "住宅" : "Residential"], ["#3f3430", zh ? "商业" : "Commercial"],
+        ["#343b4b", zh ? "办公" : "Office"], ["#453b31", zh ? "工业" : "Industrial"],
+        ["#1c4230", zh ? "绿地" : "Green"]
+      ],
+      transit: [
+        ["#18302d", zh ? "低可达性" : "Low access"], ["#187b91", zh ? "高可达性" : "High access"],
+        ["#4ee1d2", zh ? "公共交通走廊" : "Transit corridor"]
+      ],
+      flow: [
+        ["#4ee1d2", zh ? "畅通" : "Free flow"], ["#f2bd53", zh ? "繁忙" : "Busy"],
+        ["#ff5d55", zh ? "接近容量" : "Near capacity"]
+      ],
+      state: [["#5b6874", "S"], ["#f2bd53", "E"], ["#ff5d55", "I"], ["#61cf8d", "R"]],
+      density: [["rgba(255,93,85,.18)", zh ? "低感染密度" : "Low density"], ["#ff5d55", zh ? "高感染密度" : "High density"]]
+    };
+    ui["spatial-legend"].innerHTML = legends[selectedLayer].map(([color, label]) =>
+      `<span><i style="--legend-color:${color}"></i>${label}</span>`
+    ).join("");
   }
 
   function drawCurve() {
@@ -428,7 +632,7 @@
     [1, 4, 7, 10, 14].forEach((day) => { const x = pad.l + (day - 1) / 13 * (width - pad.l - pad.r); ctx.fillText(`D${String(day).padStart(2, "0")}`, x, height - 8); });
   }
 
-  function updateAll() { updateMetrics(); updateLayerBars(); drawCity(); drawCurve(); }
+  function updateAll() { updateMetrics(); updateLayerBars(); updateSpatialLegend(); drawCity(); drawCurve(); }
 
   function tick() {
     if (!running) return;
@@ -446,6 +650,7 @@
   document.querySelectorAll("[data-map-layer]").forEach((button) => button.addEventListener("click", () => {
     selectedLayer = button.dataset.mapLayer;
     document.querySelectorAll("[data-map-layer]").forEach((item) => item.classList.toggle("active", item === button));
+    updateSpatialLegend();
     drawCity();
   }));
   ui["r0-range"].addEventListener("input", () => { ui["r0-value"].textContent = Number(ui["r0-range"].value).toFixed(2); });
@@ -461,9 +666,11 @@
     updateAll();
   });
   window.addEventListener("resize", () => { drawCity(); drawCurve(); });
-  window.addEventListener("urban-language-change", () => { updateProfileCard(); updateLayerBars(); updateMetrics(); });
+  window.addEventListener("urban-language-change", () => { updateProfileCard(); updateLayerBars(); updateMetrics(); updateSpatialLegend(); });
 
   timer = window.setInterval(tick, 90);
   window.addEventListener("pagehide", () => window.clearInterval(timer));
-  restart();
+  loadRealCityBundle()
+    .catch((error) => console.warn("Using synthetic fallback city:", error))
+    .finally(restart);
 })();

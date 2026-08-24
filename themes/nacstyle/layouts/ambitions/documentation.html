@@ -73,6 +73,12 @@
           <i>↓</i>
           <div class="accent"><small>05</small><strong data-i18n="arch-dynamics">Disease dynamics</strong><span>S → E → P → I → R</span></div>
         </div>
+        <div class="lang-panel" data-lang="en">
+          <div class="doc-callout"><b>WEB SUBSTRATE</b><span>The browser loads the same exported 10K city geometry used locally: 6,256 roads, 400 blocks, 3,130 building footprints, 31 healthcare facilities and 14 days of hourly agent positions. The compressed bundle is about 7 MB.</span></div>
+        </div>
+        <div class="lang-panel" data-lang="zh" hidden>
+          <div class="doc-callout"><b>网页底层数据</b><span>浏览器加载与本机相同的 10K 城市导出：6,256 条道路、400 个街区、3,130 个建筑轮廓、31 个医疗设施，以及 14 天逐小时 Agent 位置。压缩数据包约 7 MB。</span></div>
+        </div>
       </section>
 
       <section id="modes" class="doc-section">
@@ -130,8 +136,8 @@
 
       <section id="deployment" class="doc-section">
         <div class="section-number">07</div>
-        <div class="lang-panel" data-lang="en"><h2>Website deployment boundary</h2><p>GitHub Pages serves the bilingual interface and a deterministic browser preview. It cannot run the Python ABM. The 100K full sandbox is designed to call a separately deployed FastAPI worker that keeps the contact substrate in memory and streams aggregate deltas to the browser.</p></div>
-        <div class="lang-panel" data-lang="zh" hidden><h2>网页部署边界</h2><p>GitHub Pages 承载双语界面和确定性的浏览器预览，但不能运行 Python ABM。100K 全量沙盒被设计为调用独立部署的 FastAPI worker：服务端常驻接触 substrate，向浏览器流式发送聚合变化。</p></div>
+        <div class="lang-panel" data-lang="en"><h2>Website deployment boundary</h2><p>GitHub Pages serves the bilingual interface, the authentic compact city substrate and deterministic 10K browser execution. Heavy temporal contacts are intentionally excluded from the download. The 100K full sandbox is designed to call a separately deployed FastAPI worker that keeps those contacts in memory and streams aggregate deltas to the browser.</p></div>
+        <div class="lang-panel" data-lang="zh" hidden><h2>网页部署边界</h2><p>GitHub Pages 承载双语界面、真实压缩城市底层数据和确定性的 10K 浏览器计算。体量巨大的时序接触事件不会下载到客户端。100K 全量沙盒被设计为调用独立部署的 FastAPI worker：服务端常驻这些接触数据，向浏览器流式发送聚合变化。</p></div>
         <pre class="deployment-diagram"><code>GitHub Pages UI
       │ WebSocket / HTTPS
       ▼
