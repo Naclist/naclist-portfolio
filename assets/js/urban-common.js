@@ -103,6 +103,7 @@
       ,"nothing-selected": "尚未选择"
       ,"inspector-prompt": "点击节点查看 Agent 身份和传播历史；点击边查看最早事件。"
       ,"network-local": "本地分析 · JSON 保留在浏览器中"
+      ,"network-layout": "网络布局"
     }
   };
 

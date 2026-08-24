@@ -3,7 +3,7 @@
 
   const root = document.querySelector("[data-network-root]");
   if (!root) return;
-  const ids = ["network-run-upload", "network-colour", "network-size", "network-layer", "network-search", "network-find", "network-reset-view", "network-canvas", "network-empty", "network-legend", "network-inspector-title", "network-inspector-content", "network-node-count", "network-edge-count", "network-generation-count", "network-earliest", "network-latest", "network-status", "network-download"];
+  const ids = ["network-run-upload", "network-layout", "network-colour", "network-size", "network-layer", "network-search", "network-find", "network-reset-view", "network-canvas", "network-force", "network-empty", "network-legend", "network-inspector-title", "network-inspector-content", "network-node-count", "network-edge-count", "network-generation-count", "network-earliest", "network-latest", "network-status", "network-download"];
   const ui = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
   const OCCUPATIONS = ["Student", "Office / professional", "Education", "Healthcare", "Retail / service", "Manufacturing", "Logistics / transport", "Construction", "Public administration", "Hospitality", "Unemployed", "Retired"];
   const OCCUPATIONS_ZH = ["学生", "办公室 / 专业人员", "教育", "医疗", "零售 / 服务", "制造业", "物流 / 交通", "建筑", "公共管理", "餐旅服务", "未就业", "退休"];
@@ -21,6 +21,8 @@
   let selectedNode = null;
   let selectedEdge = null;
   let pointer = null;
+  let forceGraph = null;
+  let forceFitPending = false;
 
   function language() { return window.urbanLanguage ? window.urbanLanguage() : "en"; }
   function updateControlLabels() {
@@ -28,6 +30,8 @@
     const colour = zh ? ["传播代", "职业", "年龄组", "社区", "疾病状态"] : ["Generation", "Occupation", "Age group", "Community", "Disease state"];
     const size = zh ? ["继发感染数", "度", "统一大小"] : ["Secondary infections", "Degree", "Uniform"];
     const layer = [zh ? "全部真实传播层" : "All realized layers", ...(zh ? LAYERS_ZH : LAYERS)];
+    const layout = zh ? ["按传播代分层", "力导向网状结构"] : ["Transmission generations", "Force-directed mesh"];
+    [...ui["network-layout"].options].forEach((option, index) => { option.textContent = layout[index]; });
     [...ui["network-colour"].options].forEach((option, index) => { option.textContent = colour[index]; });
     [...ui["network-size"].options].forEach((option, index) => { option.textContent = size[index]; });
     [...ui["network-layer"].options].forEach((option, index) => { option.textContent = layer[index]; });
@@ -103,7 +107,9 @@
     viewport.scale = 1; viewport.x = 0; viewport.y = 0;
     ui["network-empty"].hidden = true;
     ui["network-download"].disabled = false;
-    updateSummary(); updateInspector(); draw();
+    updateSummary(); updateInspector();
+    if (ui["network-layout"].value === "force") updateForceData(true);
+    else draw();
   }
 
   function filteredEdges() {
@@ -129,15 +135,114 @@
     return { x: margin + node.x * (width - margin * 2), y: margin + node.y * (height - margin * 2) };
   }
 
+  function visibleNodeIds() {
+    const ids = new Set();
+    filteredEdges().forEach((edge) => { ids.add(edge.source); ids.add(edge.target); });
+    nodes.filter((node) => node.generation === 0).forEach((node) => ids.add(node.id));
+    return ids;
+  }
+  function forceNodeLabel(node) {
+    const zh = language() === "zh";
+    const occupation = metadataValue("occupation", node.id, 0);
+    return `Agent ${node.id}\n${zh ? "传播代" : "Generation"}: ${node.generation}\n${zh ? "职业" : "Occupation"}: ${(zh ? OCCUPATIONS_ZH : OCCUPATIONS)[occupation] || occupation}`;
+  }
+  function forceLinkHighlighted(link) {
+    const edge = link._edge;
+    return selectedEdge === edge || (selectedNode && edge && (edge.source === selectedNode.id || edge.target === selectedNode.id));
+  }
+  function ensureForceGraph() {
+    if (forceGraph) return true;
+    if (typeof ForceGraph !== "function") return false;
+    forceGraph = ForceGraph()(ui["network-force"])
+      .backgroundColor("#091016")
+      .nodeId("id")
+      .nodeLabel(forceNodeLabel)
+      .nodeColor(nodeColour)
+      .nodeVal((node) => Math.max(1, nodeRadius(node) ** 2 / 5))
+      .nodeRelSize(3.8)
+      .linkColor((link) => forceLinkHighlighted(link) ? "rgba(255,226,57,.9)" : "rgba(122,148,164,.24)")
+      .linkWidth((link) => forceLinkHighlighted(link) ? 2.4 : .8)
+      .linkDirectionalArrowLength(3)
+      .linkDirectionalArrowRelPos(1)
+      .linkDirectionalParticles((link) => forceLinkHighlighted(link) ? 1 : 0)
+      .linkDirectionalParticleWidth(1.4)
+      .enableNodeDrag(true)
+      .minZoom(.15)
+      .maxZoom(18)
+      .cooldownTicks(130)
+      .nodeCanvasObjectMode(() => "after")
+      .nodeCanvasObject((node, ctx, globalScale) => {
+        if (!selectedNode || node.id !== selectedNode.id) return;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, nodeRadius(node) + 5 / globalScale, 0, Math.PI * 2);
+        ctx.strokeStyle = "#ffe239";
+        ctx.lineWidth = 2 / globalScale;
+        ctx.stroke();
+      })
+      .onNodeClick((node) => selectAgent(node.id, false))
+      .onLinkClick((link) => {
+        selectedNode = null;
+        selectedEdge = link._edge;
+        updateInspector();
+        refreshForceStyles();
+      });
+    forceGraph.d3Force("charge")?.strength(-75);
+    forceGraph.d3Force("link")?.distance(42).strength(.5);
+    return true;
+  }
+  function sizeForceGraph() {
+    if (!forceGraph) return;
+    const rect = ui["network-force"].getBoundingClientRect();
+    forceGraph.width(Math.max(1, Math.round(rect.width))).height(Math.max(1, Math.round(rect.height)));
+  }
+  function refreshForceStyles() {
+    if (!forceGraph) return;
+    forceGraph
+      .nodeColor(nodeColour)
+      .nodeVal((node) => Math.max(1, nodeRadius(node) ** 2 / 5))
+      .nodeLabel(forceNodeLabel)
+      .linkColor((link) => forceLinkHighlighted(link) ? "rgba(255,226,57,.9)" : "rgba(122,148,164,.24)")
+      .linkWidth((link) => forceLinkHighlighted(link) ? 2.4 : .8);
+  }
+  function updateForceData(fit = false) {
+    if (!ensureForceGraph()) {
+      ui["network-layout"].value = "generation";
+      ui["network-status"].textContent = language() === "zh" ? "力导向组件加载失败，已回到传播代视图" : "Force layout failed to load; showing the generation view";
+      draw();
+      return;
+    }
+    sizeForceGraph();
+    const visible = visibleNodeIds();
+    const graphNodes = nodes.filter((node) => visible.has(node.id)).map((node) => ({ ...node }));
+    const graphLinks = filteredEdges().map((edge) => ({ source: edge.source, target: edge.target, _edge: edge }));
+    forceGraph.graphData({ nodes: graphNodes, links: graphLinks });
+    refreshForceStyles();
+    if (fit && graphNodes.length) {
+      forceFitPending = true;
+      setTimeout(() => {
+        if (!forceFitPending || ui["network-layout"].value !== "force") return;
+        forceGraph.zoomToFit(500, 55);
+        forceFitPending = false;
+      }, 500);
+    }
+  }
+
   function draw() {
+    const forceMode = ui["network-layout"].value === "force";
+    ui["network-canvas"].hidden = forceMode;
+    ui["network-force"].hidden = !forceMode;
+    if (forceMode) {
+      drawLegend();
+      if (run && (!forceGraph || !forceGraph.graphData().nodes.length)) updateForceData(true);
+      else { sizeForceGraph(); refreshForceStyles(); }
+      return;
+    }
     const { width, height } = resizeCanvas();
     const ctx = ui["network-canvas"].getContext("2d");
     ctx.clearRect(0, 0, width, height); ctx.fillStyle = "#091016"; ctx.fillRect(0, 0, width, height);
     if (!run) return;
     const visibleEdges = filteredEdges();
-    const visibleNodes = new Set();
-    visibleEdges.forEach((edge) => { visibleNodes.add(edge.source); visibleNodes.add(edge.target); });
-    nodes.filter((node) => node.generation === 0).forEach((node) => visibleNodes.add(node.id));
+    const visibleNodes = visibleNodeIds();
     ctx.save(); ctx.translate(viewport.x, viewport.y); ctx.scale(viewport.scale, viewport.scale);
     ctx.lineWidth = .75 / viewport.scale;
     visibleEdges.forEach((edge) => {
@@ -207,16 +312,44 @@
     }
     updateInspector(); draw();
   }
-  function selectAgent(id) { const node=nodeById.get(Number(id)); if(!node)return false; selectedNode=node;selectedEdge=null;updateInspector();draw();return true; }
+  function selectAgent(id, focus = true) {
+    const node = nodeById.get(Number(id));
+    if (!node) return false;
+    selectedNode = node; selectedEdge = null; updateInspector(); draw();
+    if (focus && ui["network-layout"].value === "force" && forceGraph) {
+      const forceNode = forceGraph.graphData().nodes.find((candidate) => candidate.id === node.id);
+      if (forceNode && Number.isFinite(forceNode.x) && Number.isFinite(forceNode.y)) {
+        forceGraph.centerAt(forceNode.x, forceNode.y, 500);
+        forceGraph.zoom(5, 500);
+      }
+    }
+    return true;
+  }
   async function loadDocument(documentData, label) { buildGraph(documentData); ui["network-status"].textContent=label; }
   async function loadShared(id) { ui["network-status"].textContent=language()==="zh"?"正在加载 24 小时链接…":"Loading 24-hour link…"; const response=await fetch(new URL(`runs/${encodeURIComponent(id)}`,root.dataset.runApi)); if(!response.ok)throw new Error(response.status===404?"Run expired or not found":`Load failed: ${response.status}`); await loadDocument(await response.json(),language()==="zh"?"已载入 24 小时共享 run":"24-hour shared run loaded"); }
   function downloadRun(){if(!run)return;const blob=new Blob([JSON.stringify(run)],{type:"application/json"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download="synthetic-city-run.json";link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
 
   ui["network-run-upload"].addEventListener("change",async()=>{const file=ui["network-run-upload"].files?.[0];if(!file)return;try{await loadDocument(JSON.parse(await file.text()),language()==="zh"?"本地 run JSON 已加载":"Local run JSON loaded");}catch(error){ui["network-status"].textContent=error.message;}finally{ui["network-run-upload"].value="";}});
-  ["network-colour","network-size","network-layer"].forEach((id)=>ui[id].addEventListener("change",draw));
+  ui["network-layout"].addEventListener("change", () => {
+    forceFitPending = false;
+    if (ui["network-layout"].value === "force" && run) {
+      ui["network-canvas"].hidden = true;
+      ui["network-force"].hidden = false;
+      updateForceData(true);
+      drawLegend();
+    } else draw();
+  });
+  ["network-colour","network-size"].forEach((id)=>ui[id].addEventListener("change",draw));
+  ui["network-layer"].addEventListener("change", () => {
+    if (ui["network-layout"].value === "force") updateForceData(true);
+    else draw();
+  });
   ui["network-find"].addEventListener("click",()=>{if(!selectAgent(ui["network-search"].value))ui["network-status"].textContent=language()==="zh"?"该 Agent 不在传播网络中":"Agent is not present in this transmission network";});
   ui["network-search"].addEventListener("keydown",(event)=>{if(event.key==="Enter")ui["network-find"].click();});
-  ui["network-reset-view"].addEventListener("click",()=>{viewport.scale=1;viewport.x=0;viewport.y=0;draw();});
+  ui["network-reset-view"].addEventListener("click",()=>{
+    if (ui["network-layout"].value === "force" && forceGraph) forceGraph.zoomToFit(500,55);
+    else { viewport.scale=1;viewport.x=0;viewport.y=0;draw(); }
+  });
   ui["network-download"].addEventListener("click",downloadRun);
   ui["network-inspector-content"].addEventListener("click",(event)=>{const button=event.target.closest("[data-select-agent]");if(button)selectAgent(button.dataset.selectAgent);});
   ui["network-canvas"].addEventListener("wheel",(event)=>{event.preventDefault();const point=canvasCoordinates(event);const next=Math.min(12,Math.max(1,viewport.scale*(event.deltaY<0?1.25:.8)));const ratio=next/viewport.scale;viewport.x=point.x-(point.x-viewport.x)*ratio;viewport.y=point.y-(point.y-viewport.y)*ratio;viewport.scale=next;if(next===1){viewport.x=0;viewport.y=0;}draw();},{passive:false});

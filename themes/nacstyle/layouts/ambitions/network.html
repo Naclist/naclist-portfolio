@@ -21,6 +21,7 @@
   </header>
 
   <section class="network-controls">
+    <label><span data-i18n="network-layout">Network layout</span><select id="network-layout"><option value="generation">Transmission generations</option><option value="force">Force-directed mesh</option></select></label>
     <label><span data-i18n="colour-by">Colour nodes by</span><select id="network-colour"><option value="generation">Generation</option><option value="occupation">Occupation</option><option value="age">Age group</option><option value="community">Community</option><option value="state">Disease state</option></select></label>
     <label><span data-i18n="size-by">Node size</span><select id="network-size"><option value="secondary">Secondary infections</option><option value="degree">Degree</option><option value="fixed">Uniform</option></select></label>
     <label><span data-i18n="filter-layer">Contact layer</span><select id="network-layer"><option value="all">All realized layers</option><option value="0">Household</option><option value="1">School</option><option value="2">Workplace</option><option value="3">Community</option><option value="4">Transport</option><option value="5">Healthcare</option><option value="6">Transient</option></select></label>
@@ -40,6 +41,7 @@
   <section class="network-workspace">
     <div class="network-canvas-wrap">
       <canvas id="network-canvas" aria-label="Interactive transmission network"></canvas>
+      <div id="network-force" class="network-force" aria-label="Interactive force-directed transmission network" hidden></div>
       <div class="network-empty" id="network-empty"><b data-i18n="network-empty-title">No run loaded</b><span data-i18n="network-empty-copy">Upload a JSON exported from the Sandbox, or open a 24-hour shared link.</span></div>
       <div class="network-map-help" data-i18n="network-help">Scroll to zoom · drag to pan · click nodes or edges</div>
       <div class="network-legend" id="network-legend"></div>
@@ -56,5 +58,6 @@
 
 {{ define "scripts" }}
   {{ with resources.Get "js/urban-common.js" }}{{ $script := . | resources.Minify | resources.Fingerprint }}<script src="{{ $script.RelPermalink | absURL }}" defer></script>{{ end }}
+  <script src="https://unpkg.com/force-graph" defer></script>
   {{ with resources.Get "js/urban-network.js" }}{{ $script := . | resources.Minify | resources.Fingerprint }}<script src="{{ $script.RelPermalink | absURL }}" defer></script>{{ end }}
 {{ end }}
